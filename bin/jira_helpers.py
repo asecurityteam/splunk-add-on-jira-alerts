@@ -27,11 +27,20 @@ def update_jira_settings(jira_settings, server_uri, session_key):
     r = requests.post(
         url=server_uri+'/servicesNS/nobody/splunk-add-on-jira-alerts/alerts/alert_actions/jira?output_mode=json',
         data={
-            'param.jira_url': jira_settings.get('jira_url'),
-            'param.jira_username': jira_settings.get('jira_username'),
-            'param.project_key': jira_settings.get('project_key', ''),
-            'param.issue_type': jira_settings.get('issue_type', ''),
-            'param.priority': jira_settings.get('priority', '')
+            'param.jira_url':       jira_settings.get('jira_url'),
+            'param.jira_username':  jira_settings.get('jira_username'),
+            'param.project_key':    jira_settings.get('project_key', ''),
+            'param.issue_type':     jira_settings.get('issue_type', ''),
+            'param.summary':        jira_settings.get('summary', ''),
+            'param.description':    jira_settings.get('description', ''),
+            'param.priority':       jira_settings.get('priority', ''),
+            'param.labels':         jira_settings.get('labels', ''),
+            'param.attachment':     jira_settings.get('attachment', ''),
+            'param.assignee':       jira_settings.get('assignee', ''),
+            'param.grouping':       jira_settings.get('grouping', ''),
+            'param.group_by':       jira_settings.get('group_by', ''),
+            'param.link':           jira_settings.get('link', ''),
+            'param.comment':        jira_settings.get('comment', '')
         },
         headers=splunkd_auth_header(session_key),
         verify=False).json()

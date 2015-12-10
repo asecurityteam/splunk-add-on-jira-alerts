@@ -34,7 +34,8 @@ def send_message(payload):
     # create outbound request object
     try:
         headers = {"Content-Type": "application/json"}
-        result = requests.post(url=jira_url, data=body, headers=headers, auth=(username, password))
+        raw_result = requests.post(url=jira_url, data=body, headers=headers, auth=(username, password))
+        result = raw_result.json()
         if 'errors' in result.keys():
             logger.error("JIRA server error received, error: %s" % (result['errors'].text))
     except Exception, e:

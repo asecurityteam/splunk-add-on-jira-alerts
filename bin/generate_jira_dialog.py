@@ -49,7 +49,7 @@ TEMPLATE = '''
             <textarea name="action.jira.param.description" id="description" style="height: 120px;"></textarea>
             <span class="help-block">
                 Enter a description of the issue. This text can include tokens that will resolve to text based on search results.
-                <a href="{{SPLUNKWEB_URL_PREFIX}}/help?location=learnmore.alert.action.tokens" target="_blank"
+                <a href="http://docs.splunk.com/Documentation/Splunk/latest/AdvancedDev/ModAlertsIntro#About_token_replacement_in_custom_alert_actions" target="_blank"
                    title="Splunk help">Learn More <i class="icon-external"></i></a>
             </span>
         </div>

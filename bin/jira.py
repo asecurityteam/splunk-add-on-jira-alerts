@@ -35,7 +35,8 @@ def send_message(payload):
     try:
         headers = {"Content-Type": "application/json"}
         result = requests.post(url=jira_url, data=body, headers=headers, auth=(username, password))
-        logger.info("JIRA server http_status: %s" % (result.text))
+        if 'errors' in result.keys():
+            logger.error("JIRA server error received, error: %s" % (result['errors']).text))
     except Exception, e:
         print >> sys.stderr, "ERROR Error sending message: %s" % e
         return False
@@ -48,7 +49,7 @@ if __name__ == "__main__":
             payload = json.loads(raw_payload)
 
             # pull out the payload
-            logger.debug("Unexpected error: %s" % str(payload))
+            logger.debug("JSON payload from sendmodalert: %s" % str(payload))
 
             send_message(payload)
         except Exception, e:

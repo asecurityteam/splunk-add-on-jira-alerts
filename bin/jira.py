@@ -44,6 +44,7 @@ if __name__ == "__main__":
             # retrieving message payload from splunk
             raw_payload = sys.stdin.read()
             payload = json.loads(raw_payload)
+            print >> sys.stderr, "DEBUG Unexpected error: %s" % str(payload)
             send_message(payload)
         except Exception, e:
             print >> sys.stderr, "ERROR Unexpected error: %s" % e

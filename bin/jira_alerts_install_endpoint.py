@@ -4,7 +4,9 @@ from generate_jira_dialog import generate_jira_dialog
 from jira_helpers import *
 
 PASSWORD_PLACEHOLDER = '*******'
-DEFAULT_SETTINGS = ('project_key', 'issue_type', 'priority')
+DEFAULT_SETTINGS = ( 'index', 'project_key', 'issue_type',
+                     'summary', 'description', 'priority', 'labels', "attachment", "assignee",
+                     'grouping', 'group_by', 'link', 'comment' )
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):
     def __init__(self, *args):
@@ -45,7 +47,7 @@ class JiraAlertsInstallHandler(admin.MConfigHandler):
                 try:
                     generate_jira_dialog(jira_settings, splunk.getLocalServerInfo(), self.getSessionKey())
                 except Exception, e:
-                    raise admin.AdminManagerException("Error importing settings from Jira, check server URL and credentials: " + str(e))
+                    raise admin.AdminManagerException("Error importing settings from JIRA, check server URL and credentials: " + str(e))
 
 
 admin.init(JiraAlertsInstallHandler, admin.CONTEXT_APP_ONLY)

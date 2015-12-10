@@ -24,7 +24,8 @@
         </input>
         <text>After submitting the setup with the checkbox enabled, Splunk will fetch all projects and issue types from your JIRA server, so it can be selected when creating an alert.</text>
     </block>
-    <block title="Default Settings" endpoint="admin/jira_alerts_install" entity="jira">
+    <block title="Default Create Settings" endpoint="admin/jira_alerts_install" entity="jira">
+        <text>These are the default settings that will apply for all newly created issues unless otherwise specified. These can be overriden when creating individual alerts.</text>
         <input field="default_project_key">
             <label>Default Project</label>
             <type>text</type>
@@ -33,9 +34,61 @@
             <label>Default Issue Type</label>
             <type>text</type>
         </input>
+        <input field="default_summary">
+            <label>Default Summary</label>
+            <type>text</type>
+        </input>
+        <input field="default_description">
+            <label>Default Description</label>
+            <type>text</type>
+        </input>
         <input field="default_priority">
             <label>Default Priority</label>
             <type>text</type>
         </input>
+        <input field="default_labels">
+            <label>Default Labels</label>
+            <type>text</type>
+        </input>
+        <input field="default_attachment">
+            <label>Default Attachment Behavior</label>
+            <type>bool</type>
+        </input>
+        <input field="default_assignee">
+            <label>Default Comment</label>
+            <type>text</type>
+        </input>
+    </block>
+
+    <block title="Default Grouping Settings" endpoint="admin/jira_alerts_install" entity="jira">
+        <text>These are the default settings that will apply for all newly created issues unless otherwise specified. These can be overriden when creating individual alerts.</text>
+        <input field="default_grouping">
+            <label>Default Grouping Method</label>
+            <type>text</type>
+        </input>
+        <input field="default_group_by">
+            <label>Default Group By Field</label>
+            <type>text</type>
+        </input>
+        <input field="default_link">
+            <label>Default Linking Behavior</label>
+            <type>text</type>
+        </input>
+        <input field="default_comment">
+            <label>Default Comment</label>
+            <type>text</type>
+        </input>
+    </block>
+
+    <block title="General Settings" endpoint="admin/jira_alerts_install" entity="jira" >
+        <text>Set the destination index for logging of fired alerts and other metadata.</text>
+        <input field="index">
+            <label>Index Name</label>
+            <type>text</type>
+        </input>
+<!--    <input field="debug">
+            <label>Enable Debugging</label>
+            <type>bool</type>
+        </input> -->
     </block>
 </setup>

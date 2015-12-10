@@ -32,7 +32,7 @@ class JiraAlertsInstallHandler(admin.MConfigHandler):
         item['jira_url'] = jira_settings.get('jira_url', 'http://your.server/')
         item['jira_username'] = jira_settings.get('jira_username')
         item['jira_password'] = PASSWORD_PLACEHOLDER
-        for k, v in DEFAULT_SETTINGS:
+        for k, v in DEFAULT_SETTINGS.items():
             item['default_' + k] = jira_settings.get(k, v)
         item['import'] = '0'
 
@@ -47,7 +47,7 @@ class JiraAlertsInstallHandler(admin.MConfigHandler):
                 password = self.callerArgs['jira_password'][0]
                 if password and password != PASSWORD_PLACEHOLDER:
                     jira_settings['jira_password'] = password
-            for k in DEFAULT_SETTINGS:
+            for k, v in DEFAULT_SETTINGS.items():
                 if 'default_' + k in self.callerArgs:
                     jira_settings[k] = self.callerArgs['default_' + k][0]
             if not validate_jira_settings(jira_settings):

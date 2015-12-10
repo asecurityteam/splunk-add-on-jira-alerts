@@ -55,7 +55,7 @@
             <type>bool</type>
         </input>
         <input field="default_assignee">
-            <label>Default Comment</label>
+            <label>Default Assignee</label>
             <type>text</type>
         </input>
     </block>

@@ -4,9 +4,19 @@ from generate_jira_dialog import generate_jira_dialog
 from jira_helpers import *
 
 PASSWORD_PLACEHOLDER = '*******'
-DEFAULT_SETTINGS = ( 'index', 'project_key', 'issue_type',
-                     'summary', 'description', 'priority', 'labels', "attachment", "assignee",
-                     'grouping', 'group_by', 'link', 'comment' )
+DEFAULT_SETTINGS = { 'index': '_internal',
+                     'project_key': '',
+                     'issue_type': '',
+                     'summary': '$name$',
+                     'description': 'file:///description_plain.tmpl',
+                     'priority': '',
+                     'labels': 'splunk',
+                     'attachment': False,
+                     'assignee': 'Unassigned',
+                     'grouping': 'None',
+                     'group_by': 'None',
+                     'link': True,
+                     'comment': 'file:///comment_plain.tmpl' }
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):
     def __init__(self, *args):
@@ -22,8 +32,8 @@ class JiraAlertsInstallHandler(admin.MConfigHandler):
         item['jira_url'] = jira_settings.get('jira_url', 'http://your.server/')
         item['jira_username'] = jira_settings.get('jira_username')
         item['jira_password'] = PASSWORD_PLACEHOLDER
-        for k in DEFAULT_SETTINGS:
-            item['default_' + k] = jira_settings.get(k, '')
+        for k, v in DEFAULT_SETTINGS:
+            item['default_' + k] = jira_settings.get(k, v)
         item['import'] = '0'
 
     def handleEdit(self, confInfo):

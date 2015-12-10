@@ -37,7 +37,7 @@ def send_message(payload):
         raw_result = requests.post(url=jira_url, data=body, headers=headers, auth=(username, password))
         result = raw_result.json()
         if 'errors' in result.keys():
-            logger.error("JIRA server error received, error: %s" % (result['errors'].text))
+            logger.error("JIRA server error received, error: %s" % (result['errors']))
     except Exception, e:
         print >> sys.stderr, "ERROR Error sending message: %s" % e
         return False

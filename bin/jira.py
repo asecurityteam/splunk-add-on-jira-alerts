@@ -4,7 +4,7 @@ import requests
 from jira_helpers import get_jira_password
 from jira_logging import get_logger
 
-logger = get_logger(logging.DEBUG)
+logger = get_logger()
 
 # creates outbound message from alert payload contents
 # and attempts to send to the specified endpoint

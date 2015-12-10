@@ -2,7 +2,7 @@ import sys, os
 import logging, logging.handlers
 import datetime
 
-def get_logger(level, process_name='alert'):
+def get_logger(level=logging.DEBUG, process_name='alert'):
     """ Setup a logging for a provided process name, i.e. my_script.py or my_app.
     Provide a logging level to set as well. """
 

@@ -15,7 +15,7 @@ DEFAULT_SETTINGS = { 'index': '_internal',
                      'assignee': 'Unassigned',
                      'grouping': 'None',
                      'group_by': 'None',
-                     'link': True,
+                     'link': 'None',
                      'comment': 'file:///comment_plain.tmpl' }
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):

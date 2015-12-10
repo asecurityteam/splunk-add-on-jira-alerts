@@ -64,7 +64,7 @@
         <text>These are the default settings that will apply for all newly created issues unless otherwise specified. These can be overriden when creating individual alerts.</text>
         <input field="default_grouping">
             <label>Default Grouping Method</label>
-            <type>text</type>
+            <type>list</type>
         </input>
         <input field="default_group_by">
             <label>Default Group By Field</label>

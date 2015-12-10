@@ -2,6 +2,9 @@ import sys
 import json
 import requests
 from jira_helpers import get_jira_password
+from jira_logging import get_logger
+
+logger = get_logger(logging.DEBUG)
 
 # creates outbound message from alert payload contents
 # and attempts to send to the specified endpoint
@@ -32,8 +35,7 @@ def send_message(payload):
     try:
         headers = {"Content-Type": "application/json"}
         result = requests.post(url=jira_url, data=body, headers=headers, auth=(username, password))
-        print >>sys.stderr, "INFO Jira server HTTP status= %s" % result.text
-        print >>sys.stderr, "INFO Jira server response: %s" % result.text
+        logger.info("JIRA server http_status: %s" % (result.text))
     except Exception, e:
         print >> sys.stderr, "ERROR Error sending message: %s" % e
         return False
@@ -44,7 +46,10 @@ if __name__ == "__main__":
             # retrieving message payload from splunk
             raw_payload = sys.stdin.read()
             payload = json.loads(raw_payload)
-            print >> sys.stderr, "DEBUG Unexpected error: %s" % str(payload)
+
+            # pull out the payload
+            logger.debug("Unexpected error: %s" % str(payload))
+
             send_message(payload)
         except Exception, e:
             print >> sys.stderr, "ERROR Unexpected error: %s" % e

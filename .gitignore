@@ -13,6 +13,7 @@ test/unit-test/bin/Debug
 test/unit-test/obj/Debug
 test/warum-conducive-test.v12.suo
 
+# Splunk local stuff
 local
 # (Normally we'd exclude the entire "metadata" directory.
 #  However we must preserve metadata/default.meta so that eventgen works.)
@@ -25,4 +26,3 @@ local.meta
 build
 .build
 *.orig.pre41
-

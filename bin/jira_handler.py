@@ -1,10 +1,11 @@
 import sys
 import json
 import requests
+import time
+from jira import JIRA
 from jira_helpers import get_jira_password
-from jira_logging import get_logger
+import jira_logging as logger
 
-logger = get_logger()
 
 # creates outbound message from alert payload contents
 # and attempts to send to the specified endpoint
@@ -39,7 +40,7 @@ def send_message(payload):
         if 'errors' in result.keys():
             logger.error("JIRA server error received, error: %s" % (result['errors']))
     except Exception, e:
-        print >> sys.stderr, "ERROR Error sending message: %s" % e
+        logger.error("Error sending message: %s" % e
         return False
 
 if __name__ == "__main__":
@@ -54,8 +55,8 @@ if __name__ == "__main__":
 
             send_message(payload)
         except Exception, e:
-            print >> sys.stderr, "ERROR Unexpected error: %s" % e
+            logger.error("Unexpected error: %s" % e)
             sys.exit(3)
     else:
-        print >> sys.stderr, "FATAL Unsupported execution mode (expected --execute flag)"
+        logger.error("Unsupported execution mode, expected \'--execute\' flag")
         sys.exit(1)

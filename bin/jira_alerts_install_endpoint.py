@@ -3,20 +3,23 @@ import splunk.admin as admin
 from generate_jira_dialog import generate_jira_dialog
 from jira_helpers import *
 
+# should add some logging here
+############
+
 PASSWORD_PLACEHOLDER = '*******'
 DEFAULT_SETTINGS = { 'index': '_internal',
                      'project_key': '',
                      'issue_type': '',
                      'summary': '$name$',
-                     'description': 'file:///description_plain.tmpl',
-                     'priority': '',
+                     'description': '< to do >',
+                     'priority': 'Medium',
                      'labels': 'splunk',
                      'attachment': False,
                      'assignee': 'Unassigned',
                      'grouping': 'None',
                      'group_by': 'None',
                      'link': 'None',
-                     'comment': 'file:///comment_plain.tmpl' }
+                     'comment': '< to do >' }
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):
     def __init__(self, *args):

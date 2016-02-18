@@ -29,15 +29,15 @@ if not APP_LIB_DIR in sys.path:
 
 # Setup logging
 # import jira_logging
-# log_level = logging.DEBUG
-# logr = jira_logging.get_logger(logging.DEBUG, 'scheduler')
+# log_level = logger.DEBUG
+# logr = jira_logger.get_logger(logger.DEBUG, 'scheduler')
 
 
-log_level = logging.DEBUG
-logr = logging.getLogger(__name__)
+log_level = logger.DEBUG
+logr = logger.getLogger(__name__)
 lf = 'jira_scheduler' + '.log'
-fh = logging.handlers.RotatingFileHandler(os.path.join(SPLUNK_HOME, BASE_LOG_PATH, lf), mode='a', maxBytes=25000000)
-formatter = logging.Formatter("%(asctime)-15s %(levelname)-5s %(module)s:%(lineno)d - %(message)s")
+fh = logger.handlers.RotatingFileHandler(os.path.join(SPLUNK_HOME, BASE_LOG_PATH, lf), mode='a', maxBytes=25000000)
+formatter = logger.Formatter("%(asctime)-15s %(levelname)-5s %(module)s:%(lineno)d - %(message)s")
 fh.setFormatter(formatter)
 logr.addHandler(fh)
 logr.setLevel(log_level)
@@ -67,7 +67,7 @@ num_alerts = 0
 if len(saved_searches) > 0:
 
     # logr.debug('action=%s num_searches=%s message="%s"' % ('query', len(saved_searches), 'found saved searches with alerts to process from fired_alerts'))
-    # logging.debug('action=%s saved_searches="%s" message="%s"' % ('trace', str(saved_searches), 'dump of saved searches to work with'))
+    # logger.debug('action=%s saved_searches="%s" message="%s"' % ('trace', str(saved_searches), 'dump of saved searches to work with'))
 
     for search in saved_searches:
         num_searches += 1

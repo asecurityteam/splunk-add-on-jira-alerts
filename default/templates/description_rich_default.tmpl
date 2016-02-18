@@ -1,0 +1,17 @@
+h3. {color:#707070}*${search_name}$*{color}
+h6. Event Data
+{% for row in results_formatted_jira%}${row}${% endfor %}
+{% if is_truncated %}
+	~_${num_truncated}$ events truncated for readability_ (!)~
+{% endif %}
+
+
+h6. Event Details
+{color:#707070}~*Triggered*: {{${trigger_time}$}} | *Expires*: {{ <to do> }}
+*\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~ | ~*Server*: {{ <to do> }}
+*Hash*: {{${event_hash}$}} | *Keywords*: {% for kword,kval in keywords.items %}{{${kword}$::_*${kval}$*_}}{% endfor %}
+*Unique Values*: {{${results_unique}$}}~{color}
+
+h6. Search Query
+{color:#707070}~*App Name*: [~{{${app}$}}] | *Owner*: [~{{${owner}$}}]~{color}
+{noformat}{% for command in search_string.split('|') %}${command}${% endfor %}{noformat}

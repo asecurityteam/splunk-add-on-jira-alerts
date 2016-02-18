@@ -15,7 +15,7 @@ I. Unit Test Usage:
 II. Shell-level Invocation
     1. In shell, navigate to $SPLUNK_HOME/etc/apps/atlassian-add-on-jira-alerts/bin
     2. Open jira_test.json and fill in relevant bits.
-    3. Execute "cat jira_test.json | splunk cmd python jira_handler.py --execute"
+    3. Execute "cat jira_test.json | splunk cmd python jira.py --execute"
 
     Expected Result:
         A new issue will have been created in the target JIRA instance.

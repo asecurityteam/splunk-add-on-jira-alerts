@@ -74,8 +74,8 @@ class Issue(object):
         self.resolution = None
         self.labels = self.jira_config.get('labels','').split(',')
         self.priority = None # not yet used
-        self.summary = self.jira_config.get('summary')
-        self.description = self.jira_config.get('description')
+        self.summary = self.jira_config.get('summary', DEFAULT_SUMMARY)
+        self.description = self.jira_config.get('description', DEFAULT_DESCRIPTION)
         self.comment = self.jira_config.get('comment')
 
         # Meta fields
@@ -287,7 +287,7 @@ class NewIssue(Issue):
         raw_summary = self.summary
         summary_env = jinja2.Environment(variable_start_string = '${',variable_end_string = '}$')
         # rendered_summary = summary_env.from_string(raw_summary).render(self.__dict__)
-        rendered_summary = summary_env.from_string(DEFAULT_SUMMARY).render(self.__dict__)
+        rendered_summary = summary_env.from_string(self.summary).render(self.__dict__)
 
         return rendered_summary
 
@@ -297,7 +297,7 @@ class NewIssue(Issue):
         self.format_results()
         description_env = jinja2.Environment(variable_start_string = '${',variable_end_string = '}$')
         # rendered_description = description_env.from_string(raw_description).render(self.__dict__)
-        rendered_description = description_env.from_string(DEFAULT_DESCRIPTION).render(self.__dict__)
+        rendered_description = description_env.from_string(self.description).render(self.__dict__)
 
         return rendered_description
 

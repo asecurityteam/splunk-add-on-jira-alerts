@@ -5,6 +5,7 @@ import requests
 import socket
 import json
 import splunk.rest as rest
+import splunk.input as input
 import re
 import hashlib
 import logging
@@ -39,6 +40,7 @@ class Issue(object):
     def __init__(self, payload):
         # self.logger = logging.getLogger('jira_alert')
         self.jira_config = payload['configuration']
+        self.index = 'alerts'  # need to implement config for this
 
         self.status = 'new'
         # Splunk event data fields
@@ -57,8 +59,8 @@ class Issue(object):
         self.ttl = ''
         self.keywords = {}
         self.fields = []
-        self.event_count = ''
-        self.result_count = ''
+        self.event_count = 0
+        self.result_count = 0
 
         # JIRA issue fields
         self.project = self.jira_config.get('project_key','')
@@ -77,6 +79,7 @@ class Issue(object):
         self.comment = self.jira_config.get('comment')
 
         # Meta fields
+        self.hostname = socket.gethostname()  # should eventually update this to use server.conf or even inputs.conf
         self.event_hash = None
         self.ancestor = None
         self.group_by_field = self.jira_config.get('group_by','')
@@ -185,7 +188,7 @@ class Issue(object):
         else:
             return False
 
-    def get_results_file():
+    def get_results_file(self):
         pass
 
     def format_results(self):
@@ -212,11 +215,44 @@ class Issue(object):
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print >> sys.stderr, 'exception="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'Unexpected exception seen formatting results')
 
-    def write_to_kv_store():
+    def write_to_kv_store(self):
         pass
 
-    def write_to_index():
-        pass
+    def write_to_index(self):
+        try:
+            event_str = (
+                'time="{time}" action="{action}" search_name="{search_name}" '
+                'project="{project}" key="{key}" issuetype="{issuetype}" labels="{labels}" '
+                'summary="{summary}" search_id="{search_id}" event_hash="{event_hash}" '
+                'keywords="{keywords}" group_by_field="{group_by_field}" '
+                'result_count="{result_count}" event_count="{event_count}" '
+                'update_count="{update_count}" ttl="{ttl}"'
+                )
+            event_vars = {
+                'time': now.strftime("%Y-%m-%d %H:%M:%S %Z"),
+                'action': 'create',
+                'search_name': self.search_name,
+                'project': self.project,
+                'key': self.key,
+                'issuetype': self.issuetype,
+                'labels': ' '.join(self.labels),
+                'summary': self.summary,
+                'search_id': self.sid,
+                'event_hash': self.event_hash,
+                'keywords': str(self.keywords),
+                'group_by_field': self.group_by_field,
+                'result_count': self.result_count,
+                'event_count': self.event_count,
+                'update_count': self.update_count,
+                'ttl': self.ttl
+                }
+
+            event = event_str.format(**event_vars)
+
+            input.submit(event, hostname = self.hostname, sourcetype = 'jira_issue', source = 'jira_issue.py', index = self.index )
+
+            return event
+
 
     def process_results(self):
         ''' Crunch some of the results figures for grouping and formatting inside JIRA '''
@@ -304,8 +340,14 @@ class NewIssue(Issue):
             #
             ## 2 add issue data to collection of open issues
             self.key = new_issue.key
+
             ## 3 log Splunk event to alerts index
             self.status = 'created'
+
+            try:
+                new_issue_event = self.write_to_index()
+            except Exception, e:
+                logger.debug('message="%s" new_issue_event="%s"' % ('Not authorized to access the issue creation REST endpoint', new_issue_event))
 
             return new_issue
 

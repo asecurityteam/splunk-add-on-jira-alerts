@@ -61,8 +61,10 @@ def process_alert(payload):
         pass
     else:
         new_issue = new_event.become_issue(jconn)
-        logger.info('action=%s issue_id=%s summary="%s" issuetype="%s" message="%s"' % ('create', new_issue.id, new_issue.fields.summary, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
-        logger.debug('action=%s issue_id=%s fields="%s" message="%s"' % ('create', new_issue.fields, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
+
+        if new_issue:
+            logger.info('action=%s issue_id=%s summary="%s" issuetype="%s" message="%s"' % ('create', new_issue.id, new_issue.fields.summary, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
+            logger.debug('action=%s issue_id=%s fields="%s" message="%s"' % ('create', new_issue.fields, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
 
 if __name__ == "__main__":
 

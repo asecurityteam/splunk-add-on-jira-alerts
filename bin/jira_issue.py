@@ -347,6 +347,7 @@ class NewIssue(Issue):
             try:
                 new_issue_event = self.write_to_index()
             except Exception, e:
+                logger = logging.getLogger('jira_alert')
                 logger.debug('message="%s" new_issue_event="%s"' % ('Not authorized to access the issue creation REST endpoint', new_issue_event))
 
             return new_issue

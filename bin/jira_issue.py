@@ -250,14 +250,15 @@ class Issue(object):
             event = event_str.format(**event_vars)
 
             input.submit(event, hostname = self.hostname, sourcetype = 'jira_issue', source = 'jira_issue.py', index = self.index )
-
             return event
 
+        except Exception, e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print >> sys.stderr, 'error="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'WARN: Unable to submit event to Splunk')
 
     def process_results(self):
         ''' Crunch some of the results figures for grouping and formatting inside JIRA '''
         self.get_results()
-
         if self.job:
             self.search_string = self.job['content']['eventSearch']
             self.trigger_time = self.job['updated']

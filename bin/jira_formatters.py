@@ -25,6 +25,9 @@ def is_net_addr(addr):
     else:
         return False
 
+def render_user(user):
+    pass
+
 def json_to_csv(results):
     fields = results['fields']
     sf = StringIO.StringIO()

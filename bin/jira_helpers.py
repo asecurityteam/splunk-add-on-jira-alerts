@@ -3,6 +3,7 @@ import sys
 import requests
 import json
 import logging
+import socket
 
 # SPLUNK_HOME = os.environ.get('SPLUNK_HOME')
 # BASE_LOG_PATH = os.path.join(SPLUNK_HOME, 'var', 'log', 'splunk')
@@ -61,10 +62,12 @@ def update_jira_dialog(content, server_uri, session_key):
 
 def get_jira_settings(server_uri, session_key):
     result = dict()
-    for k,v in get_jira_action_config(server_uri, session_key).items():
+    jira_config = get_jira_action_config(server_uri, session_key)
+    for k,v in jira_config.items():
         if k.startswith('param.'):
             result[k[len('param.'):]] = v
     result['jira_password'] = get_jira_password(server_uri, session_key)
+    result['hostname'] = jira_config.get('hostname', get_system_hostname_config(server_uri, session_key) )
     return result
 
 def get_jira_password(server_uri, session_key):
@@ -96,6 +99,19 @@ def get_jira_action_config(server_uri, session_key):
     url = server_uri + '/servicesNS/nobody/atlassian-add-on-jira-alerts/alerts/alert_actions/jira?output_mode=json'
     result = requests.get(url=url, headers=splunkd_auth_header(session_key), verify=False)
     return json.loads(result.text)['entry'][0]['content']
+
+def get_system_hostname_config(server_uri, session_key):
+    # get system vars
+    email_uri = server_uri + '/servicesNS/nobody/system/configs/conf-alert_actions/email?output_mode=json'
+    result = requests.get(url=email_uri, headers=splunkd_auth_header(session_key), verify=False)
+    email_conf = json.loads(result.text)['entry'][0]['content']
+
+    if email_conf['hostname'] == '':
+        hostname = socket.gethostname()
+    else:
+        hostname = email_conf['hostname']
+
+    return hostname
 
 def jira_url(jira_settings, endpoint):
     return '%s/rest/api/latest%s' % (jira_settings.get('jira_url'), endpoint)

@@ -41,7 +41,7 @@ def process_alert(payload):
     jira_config = get_jira_settings(payload['server_uri'], payload['session_key'])
 
     # WARNING - this will dump your plaintext password to Splunk's _internal index
-    logger.debug("JIRA config initialised jira_config=%s" % str(jira_config))
+    # logger.debug("JIRA config initialised jira_config=%s" % str(jira_config))
 
     # get alert object from results
     new_event = jira_issue.NewIssue(payload)
@@ -52,7 +52,7 @@ def process_alert(payload):
 
     if new_event:
         logger.info('Built new JIRA Issue object from Splunk alert, search_name="%s" sid="%s"' % (new_event.search_name, new_event.sid))
-        # logger.debug("Built new JIRA Issue object from Splunk alert new_event=%s" % str(new_event))
+        # logger.debug("New JIRA-ready event for REST API, new_event=%s" % new_event.__dict__)
     else:
         logger.warn("Unable to create JIRA Issue object from Splunk alert")
 
@@ -62,15 +62,19 @@ def process_alert(payload):
     else:
         new_issue = new_event.become_issue(jconn)
 
+        # ignore linking errors for now
+        linked_results = new_event.link_issue(jconn)
+
+        if jira_config['attachment']:
+            # ignore attachment errors for now
+            attached_results = new_event.attach_results(jconn)
+
         if new_issue:
-            logger.info('action=%s issue_id=%s summary="%s" issuetype="%s" message="%s"' % ('create', new_issue.id, new_issue.fields.summary, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
-            logger.debug('action=%s issue_id=%s fields="%s" message="%s"' % ('create', new_issue.fields, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
-                        # actions to add:
-            ## 1 add results as CSV attachment
-            #
-            ## 2 add issue data to collection of open issues
-            self.key = new_issue.key
-            ## 3 log Splunk event to alerts index
+            logger.info('action=%s sid="%s" id="%s" key="%s" summary="%s" issuetype="%s" event_hash="%s" message="%s"' % ('create', new_event.sid, new_issue.id, new_issue.key, new_issue.fields.summary, new_issue.fields.issuetype, new_event.event_hash, 'Created new JIRA issue successfully'))
+        else:
+            logger.debug('Failed to create new JIRA issue, exiting. search_name="%s" sid="%s"' % (new_event.search_name, new_event.sid))
+            sys.exit(2)
+
 
 if __name__ == "__main__":
 
@@ -82,8 +86,7 @@ if __name__ == "__main__":
             # pull out the payload
             process_alert(payload)
         except Exception, e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print >> sys.stderr, 'exception="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'Unexpected exception seen processing alert')
+            print >> sys.stderr, 'error="%s" message="%s"' % (str(e), 'Unable to fully process alert, exiting')
             sys.exit(3)
     else:
         print >> sys.stderr, "Unsupported execution mode, expected --execute flag"

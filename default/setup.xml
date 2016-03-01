@@ -51,7 +51,7 @@
             <type>text</type>
         </input>
         <input field="default_attachment">
-            <label>Default Attachment Behavior</label>
+            <label>Attachment Results File by Default</label>
             <type>bool</type>
         </input>
         <input field="default_assignee">

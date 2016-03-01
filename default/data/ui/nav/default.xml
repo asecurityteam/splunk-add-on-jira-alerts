@@ -1,4 +1,11 @@
 <nav search_view="search" color="#3572b0">
   <view name="jira_overview" default="true" />
+  <collection label="Issues">
+    <saved name="JIRA Issues (-24h)" />
+    <saved name="JIRA Add-on Logs (-24h)" />
+  </collection>
   <view name="search" />
+  <collection label="Settings">
+        <a href="/manager/atlassian-add-on-jira-alerts/apps/local/atlassian-add-on-jira-alerts/setup?action=edit">JIRA Server Settings</a>
+  </collection>
 </nav>

@@ -1,6 +1,8 @@
 import os
 import sys
 import time
+from dateutil.parser import parse
+import datetime
 import requests
 import socket
 import json
@@ -21,20 +23,21 @@ DEFAULT_SUMMARY = '''${search_name}$'''
 # {% for row in results_jira %}${row}${% endfor %}
 
 DEFAULT_DESCRIPTION = '''h3. ${search_name}$
-
-h6. Event Data ASCII
-
+\\
+Event Data ASCII
+\\
 {noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}
-
-h6. Event Details
-
+\\
+Event Details
+\\
 {color:#707070}
-~*Triggered*: {{${trigger_time}$}} | *Expires In*: {{${ttl}$s}} | *\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~
-
+~*Triggered*: {{${trigger_time_rendered}$}} | *Expires*: {{${expiration_time_rendered}$}} | *\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~
+\\
 ~*Hash*: {{${event_hash}$}} | *Unique Values*: {{${results_unique}$}}~
 {color}
-
-h6. Search Query
+\\ \\
+Search Query
+\\
 {color:#707070}~*App Name*: {{${app}$}} | *Owner*: [~${owner}$]~{color}
 {noformat}${search_string}${noformat}'''
 
@@ -43,7 +46,7 @@ class Issue(object):
     def __init__(self, payload):
         # self.logger = logging.getLogger('jira_alert')
         self.jira_config = payload['configuration']
-        self.index = 'alerts'  # need to implement config for this
+        self.index = self.jira_config.get('index','_internal')
 
         self.status = 'new'
         # Splunk event data fields
@@ -59,6 +62,8 @@ class Issue(object):
         self.results_file = payload['results_file']
         self.results_link = payload['results_link']
         self.trigger_time = ''
+        self.trigger_time_rendered = ''
+        self.expiration_time_rendered = ''
         self.ttl = ''
         self.keywords = {}
         self.fields = []
@@ -163,7 +168,7 @@ class Issue(object):
             print >> sys.stderr, 'error="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'WARN: Unexpected exception seen getting search result data from REST API')
 
     def get_unique_values(self):
-        ''' Get the unique values for any number of fields.'''
+        '''Get the unique values for any number of fields.'''
 
         blacklisted_fields = ['count','_time',]
 
@@ -191,8 +196,25 @@ class Issue(object):
         else:
             return False
 
-    def get_results_file(self):
-        pass
+    def attach_results(self, jconn):
+        '''Attach the results.csv.gz file from dispatch as a JIRA attachment.  Append a chunk of the Splunk SID for readability'''
+        try:
+            with open(self.results_file, 'rb') as rf:
+                attached_results = jconn.add_attachment(self.id, rf, "%s%s.csv.gz" % ('results', self.sid[-15:]))
+                print >> sys.stderr, 'attached_results="%s" results_file="%s"' % (attached_results, self.results_file)
+                self.status = 'attached'
+                return attached_results
+        except jira.exceptions.JIRAError as e:
+            # failing here because of permissions error in JIRA.
+            logger = logging.getLogger('jira_alert')
+            if 'You do not have permission to create attachments for this issue' in e.text:
+                logger.debug('sid="%s" key="%s" message="%s"' % (self.sid, self.key, e.text))
+            else:
+                logger.debug('Unrecognized Exception, sid="%s" key="%s" message="%s"' % (self.sid, self.key, e.text))
+                logger.exception('')
+
+            self.status = 'attach_fail'
+            return None
 
     def format_results(self):
         '''assumes results are always passed as part of 'results['results']' which is sourced from calling output_mode=json' in the REST API which provides a JSON-formatted string.'''
@@ -222,6 +244,9 @@ class Issue(object):
         pass
 
     def write_to_index(self):
+
+        now = datetime.datetime.now()
+
         try:
             event_str = (
                 'time="{time}" action="{action}" search_name="{search_name}" '
@@ -252,20 +277,29 @@ class Issue(object):
 
             event = event_str.format(**event_vars)
 
-            input.submit(event, hostname = self.hostname, sourcetype = 'jira_issue', source = 'jira_issue.py', index = self.index )
+            # first add alerts to collections ...
+            event_submit_uri = '/services/receivers/simple?output_mode=json&host=%s&source=%s&sourcetype=%s&index=%s' % (self.hostname, 'jira_issue.py', 'jira_issue', self.index)
+            serverResponse, serverContent = rest.simpleRequest(event_submit_uri, sessionKey=self.session_key, jsonargs=json.dumps(event))
+            print >> sys.stderr, 'DUMP serverContent=%s serverResponse="%s"' % (json.loads(serverContent), json.loads(serverResponse))
+
             return event
 
         except Exception, e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print >> sys.stderr, 'error="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'WARN: Unable to submit event to Splunk')
+            logger = logging.getLogger('jira_alert')
+            logger.exception('')
 
     def process_results(self):
         ''' Crunch some of the results figures for grouping and formatting inside JIRA '''
         self.get_results()
         if self.job:
             self.search_string = self.job['content']['eventSearch']
-            self.trigger_time = self.job['updated']
             self.ttl = self.job['content']['ttl']
+            # manipulate time string using dateutil
+            # self.job['updated'] = 2016-03-01T21:03:03.000+11:00
+            updated = parse(self.job['updated'])
+            self.trigger_time = int(time.mktime(updated.timetuple())) # unix time: 1456830183
+            self.trigger_time_rendered = str(updated)
+            self.expiration_time_rendered = str(updated + datetime.timedelta(seconds=self.ttl))
             self.keywords = self.get_keywords(self.job['content']['keywords'])
             self.event_count = self.job['content']['eventCount']
             self.result_count = self.job['content']['resultCount']
@@ -274,14 +308,6 @@ class Issue(object):
             self.results_unique = self.get_unique_values()
 
         self.event_hash = self.get_event_hash()
-
-        # placeholder to prepare jinja2 template context
-        # self.context = self
-
-        # if self.get_ancestor():
-        #    update JIRA
-        # else:
-        # create JIRA
 
 class NewIssue(Issue):
     def __init__(self, payload):
@@ -306,9 +332,7 @@ class NewIssue(Issue):
         return rendered_description
 
     def become_issue(self, jconn):
-        """Create a new issue in JIRA using the alert data and open JIRA server conn """
-
-        simple_link = False
+        '''Create a new issue in JIRA using the alert data and open JIRA server conn'''
 
         issue_fields = {}
         issue_fields['summary'] = self.render_summary()
@@ -327,38 +351,29 @@ class NewIssue(Issue):
             # add link to Splunk results
             # link results
 
-            link_object = {
-              'object': {
-                'url': self.results_link,
-                'title': 'Splunk Search Results [@' + self.sid[-15:] + ']',
-                'icon': {
-                  'url16x16': 'http://www.splunk.com/content/dam/splunk2/images/icons/favicons/favicon.ico'
-                }
-              }
-            }
-
-            simple_link = jira.add_simple_link(new_issue.key, link_object)
-
             # actions to add:
             ## 1 add results as CSV attachment
             #
             ## 2 add issue data to collection of open issues
             self.key = new_issue.key
+            self.id = new_issue.id
 
             ## 3 log Splunk event to alerts index
             self.status = 'created'
 
             try:
                 new_issue_event = self.write_to_index()
+                print >> sys.stderr, 'DEBUG new_issue=%s' % new_issue_event
+
             except Exception, e:
                 logger = logging.getLogger('jira_alert')
-                logger.debug('message="%s" new_issue_event="%s"' % ('Could not write issue to index', new_issue_event))
+                logger.exception('')
 
             return new_issue
 
         except jira.exceptions.JIRAError as e:
-            import traceback
-            stack =  traceback.format_exc()
+            logger = logging.getLogger('jira_alert')
+            logger.exception('')
 
             if 'Unauthorized' in e.text:
                 # logger.debug('message="%s"' % 'Not authorized to access the issue creation REST endpoint')
@@ -379,6 +394,36 @@ class NewIssue(Issue):
             self.status = 'create_fail'
             return None
 
+    def link_issue(self, jconn):
+
+        try:
+
+            link_object = {
+              'object': {
+                'url': self.results_link,
+                'title': 'Splunk Search Results [@' + self.sid[-15:] + ']',
+                'icon': {
+                  'url16x16': 'http://www.splunk.com/content/dam/splunk2/images/icons/favicons/favicon.ico'
+                }
+              }
+            }
+
+            simple_link = jconn.add_simple_link(self.key, link_object)
+
+            print >> sys.stderr, 'DEBUG link_object=%s simple_link=%s' % (link_object, simple_link)
+
+            # add link to Splunk results
+            # link results
+
+            self.status = 'linked'
+            return simple_link
+
+        except jira.exceptions.JIRAError as e:
+            logger = logging.getLogger('jira_alert')
+            logger.exception('')
+
+            self.status = 'link_fail'
+            return None
 
 
 class SimilarIssue(Issue):

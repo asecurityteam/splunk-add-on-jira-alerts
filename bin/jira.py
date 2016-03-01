@@ -18,7 +18,7 @@ BASE_LOG_PATH = os.path.join(SPLUNK_HOME, 'var', 'log', 'splunk')
 
 def get_logger(process_name = 'jira_alert', logging_level = logging.DEBUG):
     logger = logging.getLogger(process_name)
-    fh = logging.handlers.RotatingFileHandler(BASE_LOG_PATH + process_name + '.log', maxBytes=25000000, backupCount=2)
+    fh = logging.handlers.RotatingFileHandler(os.path.join(BASE_LOG_PATH, process_name + '.log'), maxBytes=25000000, backupCount=2)
     formatter = logging.Formatter("log_level=%(levelname)-5s process=%(processName)s %(funcName)s:%(lineno)d %(message)s")
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -65,6 +65,12 @@ def process_alert(payload):
         if new_issue:
             logger.info('action=%s issue_id=%s summary="%s" issuetype="%s" message="%s"' % ('create', new_issue.id, new_issue.fields.summary, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
             logger.debug('action=%s issue_id=%s fields="%s" message="%s"' % ('create', new_issue.fields, new_issue.fields.issuetype, 'Created new JIRA issue successfully'))
+                        # actions to add:
+            ## 1 add results as CSV attachment
+            #
+            ## 2 add issue data to collection of open issues
+            self.key = new_issue.key
+            ## 3 log Splunk event to alerts index
 
 if __name__ == "__main__":
 

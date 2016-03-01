@@ -20,18 +20,17 @@ DEFAULT_SUMMARY = '''${search_name}$'''
 # h6. Event Data JIRA
 # {% for row in results_jira %}${row}${% endfor %}
 
-DEFAULT_DESCRIPTION = '''h3. ${search_name}$
-h6. Event Data ASCII
-{noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}
+DEFAULT_DESCRIPTION = '''h3. ${search_name}$\n
+h6. Event Data ASCII\n
+{noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}\n
 
-
-h6. Event Details
+h6. Event Details\n
 {color:#707070}
 ~*Triggered*: {{${trigger_time}$}} | *Expires In*: {{${ttl}$s}} | *\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~
 ~*Hash*: {{${event_hash}$}} | *Unique Values*: {{${results_unique}$}}~
-{color}
+{color}\n
 
-h6. Search Query
+h6. Search Query\n
 {color:#707070}~*App Name*: {{${app}$}} | *Owner*: [~${owner}$]~{color}
 {noformat}${search_string}${noformat}'''
 
@@ -93,7 +92,7 @@ class Issue(object):
         pass
 
     def get_event_hash(self):
-        ''' Generate the event hash based on event data, less any datetime fields.'''
+        '''Generate the event hash based on event data, less any datetime fields.'''
         search_name = self.search_name
         results_data = self.results['results']
         hashable_data = []

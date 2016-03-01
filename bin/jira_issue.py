@@ -202,7 +202,7 @@ class Issue(object):
             tmp_results = []
             allowed_fields = [ key['name'] for key in self.results['fields'] if key['name'] not in blacklist_fields ]
             for row in trimmed_results['results']:
-                print >> sys.stderr, 'printing row="%s"' % row
+                # print >> sys.stderr, 'printing row="%s"' % row
                 tmp_results.append({key: row[key] for key in row if key in allowed_fields})
             trimmed_results['results'] = tmp_results
             trimmed_results['fields'] = allowed_fields

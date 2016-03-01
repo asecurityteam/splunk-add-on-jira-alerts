@@ -20,17 +20,21 @@ DEFAULT_SUMMARY = '''${search_name}$'''
 # h6. Event Data JIRA
 # {% for row in results_jira %}${row}${% endfor %}
 
-DEFAULT_DESCRIPTION = '''h3. ${search_name}$\n
-h6. Event Data ASCII\n
-{noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}\n
+DEFAULT_DESCRIPTION = '''h3. ${search_name}$
 
-h6. Event Details\n
+h6. Event Data ASCII
+
+{noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}
+
+h6. Event Details
+
 {color:#707070}
 ~*Triggered*: {{${trigger_time}$}} | *Expires In*: {{${ttl}$s}} | *\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~
-~*Hash*: {{${event_hash}$}} | *Unique Values*: {{${results_unique}$}}~
-{color}\n
 
-h6. Search Query\n
+~*Hash*: {{${event_hash}$}} | *Unique Values*: {{${results_unique}$}}~
+{color}
+
+h6. Search Query
 {color:#707070}~*App Name*: {{${app}$}} | *Owner*: [~${owner}$]~{color}
 {noformat}${search_string}${noformat}'''
 
@@ -348,7 +352,7 @@ class NewIssue(Issue):
                 new_issue_event = self.write_to_index()
             except Exception, e:
                 logger = logging.getLogger('jira_alert')
-                logger.debug('message="%s" new_issue_event="%s"' % ('Not authorized to access the issue creation REST endpoint', new_issue_event))
+                logger.debug('message="%s" new_issue_event="%s"' % ('Could not write issue to index', new_issue_event))
 
             return new_issue
 

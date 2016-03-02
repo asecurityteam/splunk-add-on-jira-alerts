@@ -1,6 +1,6 @@
 <form>
-  <label>JIRA Overview</label>
-  <description>Quick look at all Issues created in JIRA</description>
+  <label>JIRA Issues Overview</label>
+  <description>Quick look at all JIRA Issues created with Modular Alerts</description>
   <fieldset submitButton="false" autoRun="true">
     <input type="time" token="field1" searchWhenChanged="true">
       <label></label>
@@ -26,7 +26,7 @@
         <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
         <option name="charting.axisTitleX.visibility">visible</option>
-        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
         <option name="charting.axisTitleY2.visibility">visible</option>
         <option name="charting.axisX.scale">linear</option>
         <option name="charting.axisY.scale">linear</option>

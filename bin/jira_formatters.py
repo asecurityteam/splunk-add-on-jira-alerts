@@ -26,7 +26,12 @@ def is_net_addr(addr):
         return False
 
 def render_user(user):
-    pass
+    '''Takes a username and converts into JIRA @mention syntax. Skips local splunk users.'''
+    if user in ['admin','nobody']:
+        user_rendered = user
+    else:
+        user_rendered = '[~' + user + [']']
+    return user_rendered
 
 def json_to_csv(results):
     fields = results['fields']
@@ -63,12 +68,13 @@ def json_to_jira(results):
                 if row[field] == '':
                     row[field] == ' '
 
-                # try to assign a username if possible
-                if re.search('(user|uid)',field.lower()):
-                    row_data.append('[~' + row[field] + ']')
+                # this is a bit noisy / busy so have moved out functionality to render_user()
+                # # try to assign a username if possible
+                # if re.search('(user|uid)',field.lower()):
+                #     row_data.append('[~' + row[field] + ']')
 
                 # formatting for time strings
-                elif re.search('(time|created|modified)',field.lower()):
+                if re.search('(time|created|modified)',field.lower()):
                     row_data.append('{{' + row[field] + '}}')
 
                 # formatting for numeric values
@@ -101,13 +107,8 @@ def json_to_jira(results):
             except KeyError:
                 row_data.append('--')
                 # logging.debug('action="%s" field="%s" data="%s" message="%s"' % ('trace',field, row, 'KeyError while creating JIRA table'))
-        print >> sys.stderr, 'row debugging: row="%s"' % str(row)
-
         row_str = '|' + '|'.join(row_data) + '|' + '\r\n'
         table.append(row_str)
-    #     logging.debug('<<<TRACE>>> row_str: %s' % row_str)
-
-    # logging.debug('<<<TRACE>>> table: %s' % table)
     return table
 
 

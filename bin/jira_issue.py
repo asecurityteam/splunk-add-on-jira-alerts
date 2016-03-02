@@ -26,7 +26,7 @@ DEFAULT_DESCRIPTION = '''h3. ${search_name}$
 \\
 Event Data ASCII
 \\
-{noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}
+{noformat}{% for row in results_jira %}${row}${% endfor %}{noformat}
 \\
 Event Details
 \\
@@ -38,7 +38,7 @@ Event Details
 \\ \\
 Search Query
 \\
-{color:#707070}~*App Name*: {{${app}$}} | *Owner*: [~${owner}$]~{color}
+{color:#707070}~*App Name*: {{${app}$}} | *Owner*: ${owner_rendered}$~{color}
 {noformat}${search_string}${noformat}'''
 
 class Issue(object):
@@ -200,7 +200,7 @@ class Issue(object):
         '''Attach the results.csv.gz file from dispatch as a JIRA attachment.  Append a chunk of the Splunk SID for readability'''
         try:
             with open(self.results_file, 'rb') as rf:
-                attached_results = jconn.add_attachment(self.id, rf, "%s%s.csv.gz" % ('results', self.sid[-15:]))
+                attached_results = jconn.add_attachment(self.id, rf, "%s_at_%s.csv.gz" % ('Results', self.sid.split('_at_')[1]))
                 print >> sys.stderr, 'attached_results="%s" results_file="%s"' % (attached_results, self.results_file)
                 self.status = 'attached'
                 return attached_results
@@ -233,8 +233,7 @@ class Issue(object):
             trimmed_results['results'] = tmp_results
             trimmed_results['fields'] = allowed_fields
 
-            # self.results_jira = json_to_jira(trimmed_results)[0:output_max_rows]
-
+            self.results_jira = json_to_jira(trimmed_results)[0:output_max_rows]
             self.results_ascii = json_to_tabulate(trimmed_results)[0:output_max_rows]
         except Exception, e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -280,7 +279,7 @@ class Issue(object):
             # first add alerts to collections ...
             event_submit_uri = '/services/receivers/simple?output_mode=json&host=%s&source=%s&sourcetype=%s&index=%s' % (self.hostname, 'jira_issue.py', 'jira_issue', self.index)
             serverResponse, serverContent = rest.simpleRequest(event_submit_uri, sessionKey=self.session_key, jsonargs=json.dumps(event))
-            print >> sys.stderr, 'DUMP serverContent=%s serverResponse="%s"' % (json.loads(serverContent), json.loads(serverResponse))
+            # print >> sys.stderr, 'DUMP serverContent=%s serverResponse="%s"' % (json.loads(serverContent), json.loads(serverResponse))
 
             return event
 
@@ -291,6 +290,7 @@ class Issue(object):
     def process_results(self):
         ''' Crunch some of the results figures for grouping and formatting inside JIRA '''
         self.get_results()
+
         if self.job:
             self.search_string = self.job['content']['eventSearch']
             self.ttl = self.job['content']['ttl']
@@ -308,13 +308,14 @@ class Issue(object):
             self.results_unique = self.get_unique_values()
 
         self.event_hash = self.get_event_hash()
+        self.owner_rendered = render_user(self.owner)
 
 class NewIssue(Issue):
     def __init__(self, payload):
         Issue.__init__(self, payload)
 
     def render_summary(self):
-        raw_summary = self.summary
+        print >> sys.stderr, 'DEBUG summary=%s' % self.summary
         summary_env = jinja2.Environment(variable_start_string = '${',variable_end_string = '}$')
         # rendered_summary = summary_env.from_string(raw_summary).render(self.__dict__)
         rendered_summary = summary_env.from_string(self.summary).render(self.__dict__)
@@ -401,7 +402,7 @@ class NewIssue(Issue):
             link_object = {
               'object': {
                 'url': self.results_link,
-                'title': 'Splunk Search Results [@' + self.sid[-15:] + ']',
+                'title': 'Splunk Search Results [@' + self.sid.split('_at_')[1] + ']',
                 'icon': {
                   'url16x16': 'http://www.splunk.com/content/dam/splunk2/images/icons/favicons/favicon.ico'
                 }

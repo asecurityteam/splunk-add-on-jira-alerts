@@ -45,7 +45,6 @@ def process_alert(payload):
 
     # get alert object from results
     new_event = jira_issue.NewIssue(payload)
-    # logger.debug("Built new JIRA conn jconn=%s" % new_event.__dict__)
 
     # open a new JIRA server connection
     jconn = get_jira_connection(jira_config)
@@ -79,6 +78,7 @@ def process_alert(payload):
 if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "--execute":
+        logger = get_logger()
         try:
             # retrieving message payload from splunk
             raw_payload = sys.stdin.read()
@@ -86,7 +86,8 @@ if __name__ == "__main__":
             # pull out the payload
             process_alert(payload)
         except Exception, e:
-            print >> sys.stderr, 'error="%s" message="%s"' % (str(e), 'Unable to fully process alert, exiting')
+            logger.exception('')
+            # print >> sys.stderr, 'error="%s" message="%s"' % (str(e), 'Unable to fully process alert, exiting')
             sys.exit(3)
     else:
         print >> sys.stderr, "Unsupported execution mode, expected --execute flag"

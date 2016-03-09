@@ -47,7 +47,7 @@ These are rendered using [Jinja2 templates](http://jinja.pocoo.org/docs/dev/temp
 _Important to note_ that we use `${` and `}$` as start and stop tokens (as in `${var}$`) to generate the templates!  This hybrid between Splunk's `$` delimiter and Jinja defaults `{{ }}` avoids overescaping within JIRA templating.
 
 #### Default Description Template
-Here's a basic one to get you going.
+Here's a basic one to get you going with an ASCII-style table.
 
     h3. ${search_name}$
     \\
@@ -55,6 +55,29 @@ Here's a basic one to get you going.
     {noformat}{% for row in results_ascii %}${row}${% endfor %}{noformat}
     \\
     h6.Event Details
+    {color:#707070}
+    ~*Triggered*: {{${trigger_time_rendered}$}} | *Expires*: {{${expiration_time_rendered}$}}~
+    \\
+    ~*\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Hash*: {{${event_hash}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~
+    \\
+    ~*Unique Values*: {{${results_unique}$}}~
+    {color}
+    \\ \\
+    Search Query
+    \\
+    {color:#707070}~*App Name*: {{${app}$}} | *Owner*: ${owner_rendered}$~{color}
+    {noformat}${search_string}${noformat}
+
+And here's another one with JIRA-style result tables:
+
+    h3. ${search_name}$
+    \\
+    Event Data
+    \\
+    {% for row in results_jira %}${row}${% endfor %}
+    \\
+    Event Details
+    \\
     {color:#707070}
     ~*Triggered*: {{${trigger_time_rendered}$}} | *Expires*: {{${expiration_time_rendered}$}}~
     \\

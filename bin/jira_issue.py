@@ -426,6 +426,55 @@ class NewIssue(Issue):
             self.status = 'link_fail'
             return None
 
+    def add_to_collection(self):
+        issues_entry = {}
+        # JIRA fields
+        issues_entry['project'] = issue.fields.project.key
+        issues_entry['key'] = issue.key
+        issues_entry['id'] = issue.id
+        issues_entry['summary'] = issue.fields.summary
+        issues_entry['issuetype'] = issue.fields.issuetype.name
+        if issue.fields.assignee:
+            issues_entry['assignee'] = issue.fields.assignee.key
+        else:
+            issues_entry['assignee'] = None
+        issues_entry['reporter'] = issue.fields.reporter.key
+        issues_entry['created'] = issue.fields.created
+        issues_entry['updated'] = issue.fields.updated
+        if issue.fields.resolution:
+            issues_entry['resolution'] = issue.fields.resolution.name
+        else:
+            issues_entry['resolution'] = None
+        issues_entry['labels'] = issue.fields.labels
+        issues_entry['priority'] = issue.fields.priority.name
+        # event data
+        issues_entry['group_by_field'] = template_conf['group_by_field']
+        issues_entry['event_hash'] = entry['event_hash']
+        issues_entry['search_name'] = entry['savedsearch_name']
+        issues_entry['search_id'] = entry['sid']
+        issues_entry['trigger_time'] = entry['trigger_time']
+        now = datetime.datetime.now()
+        expires = datetime.datetime.fromtimestamp(entry['trigger_time'] + entry['ttl'])
+        ttl = (expires - now).total_seconds()
+        issues_entry['keywords'] = ttl
+        issues_entry['keywords'] = entry['keywords']
+        issues_entry['event_count'] = entry['event_count']
+        issues_entry['result_count'] = entry['result_count']
+        issues_entry['update_count'] = 0
+
+        # ... then add issues to collections ...
+        issues_entry_uri = '/servicesNS/nobody/jira/storage/collections/data/issues/'
+        serverResponse, serverContent = rest.simpleRequest(issues_entry_uri, sessionKey=sessionKey, jsonargs=json.dumps(issues_entry))
+        new_issue = json.loads(serverContent)
+
+        new_alert = json.loads(serverContent)
+
+        issues_entry['_key'] = new_alert['_key']
+
+        return issues_entry
+    def update_collection(self):
+        pass
+
 
 class SimilarIssue(Issue):
 

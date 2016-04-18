@@ -101,6 +101,47 @@ For example that would render to:
 
     [JIRA Add-on] JIRA Modular Alerts Add-on Saved Search: awurster-syd-test
 
+### Available Variables
+All variables are available in Jinja using format `${<variable>}$`.  Below is a list of all vars which are currently implemented.
+
+#### Splunk event data fields
+
+        search_name = the actual search title or name
+        search_string = the search string which generated the results (i.e. 'index=foo sourcetype=foobar | stats count by host')
+        owner = username of Splunk search owner (i.e. 'awurster')
+        app = the Splunk app which the search is saved under (i.e. 'search' or 'Splunk on Splunk')
+        sid = the long search ID (used to generate the callback URL to the search results)
+        results = dictionary of the results.  can reference individual values like 'results.field[1]' 
+        results_unique = unique values of any given results field, like 'results_unique.variable'
+        results_simple = a 'noformat'or plain text style rendering of the results.
+        results_file = payload['results_file']
+        results_link = a URL pointing back to the results
+        trigger_time = the UNIX style timestamp for the trigger time of the results
+        trigger_time_rendered = trigger time printed in human readable format
+        expiration_time_rendered = expiration time rendered in human readable format
+        ttl = number of seconds before the results expire (i.e. 86400)
+        keywords = dictionary of search terms from the original search string.  good for printing metadata in raw form for free text reference ('index::foo sourcetype::bar')
+        fields = list of all fields in the results (best for stats style outputs)
+        event_count = number of events in the data.
+        result_count = number of results output from the event.
+
+#### JIRA issue fields
+See the REST API guides from Atlassian for all available fields and descriptions.
+https://developer.atlassian.com/jiradev/jira-apis/jira-rest-apis/jira-rest-api-tutorials/jira-rest-api-example-discovering-meta-data-for-creating-issues
+
+        project = the 'project_key' of an issue (i.e. 'SEC' or 'ABC')
+        id = the shortcode for the issue (i.e. 'ABC-12345')
+        issuetype = the type of issue (i.e. 'My Project Alert' or 'Helpdesk Ticket')
+        labels = comma-separated list of labels for an issue
+        summary = the summary or title of the issue
+        description = the rendered event description, including any JIRA rendering syntax
+        comment = similar to description, but for updating already-open issues
+
+#### Meta fields
+
+        hostname = hostname from either server.conf or localhost, used to prepare callback URLs
+        event_hash = a md5 hash of the event data, used to group similar alerts together
+        index = index the data is written to.  defaults to "alerts".
 
 ## License
 The Splunk Add-on for Atlassian JIRA Alerts is licensed under the Apache License 2.0. Details can be found in the [LICENSE page](http://www.apache.org/licenses/LICENSE-2.0).

@@ -30,7 +30,7 @@ def render_user(user):
     if user in ['admin','nobody']:
         user_rendered = user
     else:
-        user_rendered = '[~' + user + [']']
+        user_rendered = '[~' + user + ']'
     return user_rendered
 
 def json_to_csv(results):

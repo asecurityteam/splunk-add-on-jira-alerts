@@ -64,7 +64,7 @@ def process_alert(payload):
         # ignore linking errors for now
         linked_results = new_event.link_issue(jconn)
 
-        if jira_config['attachment']:
+        if jira_config.get('attachment'):
             # ignore attachment errors for now
             attached_results = new_event.attach_results(jconn)
 

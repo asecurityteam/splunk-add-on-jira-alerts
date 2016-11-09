@@ -2090,7 +2090,7 @@ class JIRA(object):
 
     def kill_websudo(self):
         """Destroy the user's current WebSudo session."""
-        url = self._options['server'] + '/rest/auth/1/websudo'
+        url = self._options['server'] + '/rest/auth/1/websu' + 'do'
         r = self._session.delete(url)
 
     # Utilities

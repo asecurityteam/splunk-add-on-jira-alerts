@@ -1,5 +1,5 @@
 []
-access = read : [ * ], write : [ admin ]
+access = read : [ nobody ], write : [ secint_read ]
 
 [alert_actions/jira]
 export = system

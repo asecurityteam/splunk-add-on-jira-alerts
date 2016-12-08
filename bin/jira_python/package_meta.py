@@ -97,6 +97,6 @@ def get_git_changeset():
         return None
     return timestamp.strftime('%Y%m%d%H%M%S')
 
-__version__ = get_version()
+__version__ = '1.0.7' # hardcoding cause we are not pulling from git
 setup_metadata['version'] = __version__
 setup_metadata['download_url'] = 'https://github.com/pycontribs/jira/archive/%s.tar.gz' % __version__

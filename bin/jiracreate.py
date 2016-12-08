@@ -20,6 +20,11 @@ class JiraCreateCommand(ReportingCommand):
     # determine if we want to actually send this metric to dd
     send = Option(require=False, default=False, validate=validators.Boolean())
     jira = Option(name="jira", require=False, default='default')
+    description = Option(require=False, default=None)
+    title = Option(require=False, default=None)
+    project = Option(require=False, default=None)
+    issue_type = Option(require=False, default=None)
+    send = Option(require=False, default=False, validate=validators.Boolean())
 
     def get_owner(self):
         owner = getattr(self, "owner", None)
@@ -46,17 +51,10 @@ class JiraCreateCommand(ReportingCommand):
 
         # this could likely be moved into the actual Issue statement.
         try:
-            jira = fetch_jira(self.jira, session_key=self.get_session_key())
+            config = fetch_jira(self, session_key=self.get_session_key())
         except Exception as e:
             yield dict(Exception=str(e))
             return
-
-        config = {}
-        for name,value in jira.items():
-            if name.startswith("default_"):
-                name = name[8:]
-            config[name] = value
-
 
         payload = {}
         payload['configuration'] = config
@@ -68,28 +66,21 @@ class JiraCreateCommand(ReportingCommand):
         for record in records:
             results.append(record)
 
-        #payload['results'] = dict(results=results)
-        # [OrderedDict([('_time', '1481165299.186'), ('count', '1')])
         payload['session_key'] = self.get_session_key()
-    
-        #import json
-        #with open("/tmp/splunk-self.json", "w") as f:
-        #    json.dump(self.search_results_info, f)
-
-        #with open("/tmp/splunk-records.json", "w") as f:
-        #    json.dump(results, f)
 
         new_issue = NewIssue(payload)
-        assert new_issue.issuetype
-        ticket, status = submit_issue(jira, new_issue)
+
+        if self.send:
+            ticket, status = submit_issue(new_issue)
+        else:
+            ticket, status = None, "Not Sent"
 
         row = dict()
         if ticket:
             row['ticket'] = ticket.key
         row['status'] = status
-        row.update(new_issue.jira_config)
+        row.update(config)
+        row.pop("jira_password")
         yield row
-
-        #yield dict(result=result).update(new_issue.jira_config)
 
 dispatch(JiraCreateCommand, sys.argv, sys.stdin, sys.stdout, __name__)

@@ -20,6 +20,7 @@ DEFAULT_SETTINGS = { 'index': '_internal',
                      'group_by': 'host',
                      'link': 'None',
                      'comment': 'file:///default/default_rich.tmpl',
+}
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):
     def __init__(self, *args):

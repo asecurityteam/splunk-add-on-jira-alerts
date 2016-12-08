@@ -64,7 +64,7 @@ def process_alert(payload):
 if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "--execute":
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger()
         try:
             # retrieving message payload from splunk
             raw_payload = sys.stdin.read()

@@ -15,25 +15,11 @@ BASE_LOG_PATH = os.path.join(SPLUNK_HOME, 'var', 'log', 'splunk')
 # if not APP_LIB_DIR in sys.path:
 #     sys.path.append(APP_LIB_DIR)
 
-
-def get_logger(process_name = 'jira_alert', logging_level = logging.DEBUG):
-    logger = logging.getLogger(process_name)
-    fh = logging.handlers.RotatingFileHandler(os.path.join(BASE_LOG_PATH, process_name + '.log'), maxBytes=25000000, backupCount=2)
-    formatter = logging.Formatter("log_level=%(levelname)-5s process=%(processName)s %(funcName)s:%(lineno)d %(message)s")
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    logger.setLevel(logging_level)
-    logger.propagate = False
-    return logger
-
 # creates outbound message from alert payload contents
 # and attempts to send to the specified endpoint
 def process_alert(payload):
-    logger = get_logger()
+    logger = logging.getLogger(__name__)
+    logger.setLevel(level=logging.DEBUG)
 
     # logger.debug("Original JSON payload received from sendmodalert, payload=%s" % str(payload))
 
@@ -78,7 +64,7 @@ def process_alert(payload):
 if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "--execute":
-        logger = get_logger()
+        logger = logging.getLogger(__name__)
         try:
             # retrieving message payload from splunk
             raw_payload = sys.stdin.read()

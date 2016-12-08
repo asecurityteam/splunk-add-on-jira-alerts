@@ -44,7 +44,6 @@ Search Query
 class Issue(object):
 
     def __init__(self, payload):
-        # self.logger = logging.getLogger('jira_alert')
         self.jira_config = payload['configuration']
         self.index = self.jira_config.get('index','_internal')
 
@@ -206,7 +205,7 @@ class Issue(object):
                 return attached_results
         except jira.exceptions.JIRAError as e:
             # failing here because of permissions error in JIRA.
-            logger = logging.getLogger('jira_alert')
+            logger = logging.getLogger(__name__)
             if 'You do not have permission to create attachments for this issue' in e.text:
                 logger.debug('sid="%s" key="%s" message="%s"' % (self.sid, self.key, e.text))
             else:
@@ -218,7 +217,6 @@ class Issue(object):
 
     def format_results(self):
         '''assumes results are always passed as part of 'results['results']' which is sourced from calling output_mode=json' in the REST API which provides a JSON-formatted string.'''
-        # logger = logging.getLogger('jira_alert')
         try:
             # omit fields below (ie 'mv_fields') which are unneeded to display output in JIRA tables
             blacklist_fields = []
@@ -284,7 +282,7 @@ class Issue(object):
             return event
 
         except Exception, e:
-            logger = logging.getLogger('jira_alert')
+            logger = logging.getLogger(__name__)
             logger.exception('')
 
     def process_results(self):
@@ -367,13 +365,13 @@ class NewIssue(Issue):
                 print >> sys.stderr, 'DEBUG new_issue=%s' % new_issue_event
 
             except Exception, e:
-                logger = logging.getLogger('jira_alert')
+                logger = logging.getLogger(__name__)
                 logger.exception('')
 
             return new_issue
 
         except jira.exceptions.JIRAError as e:
-            logger = logging.getLogger('jira_alert')
+            logger = logging.getLogger(__name__)
             logger.exception('')
 
             if 'Unauthorized' in e.text:
@@ -420,7 +418,7 @@ class NewIssue(Issue):
             return simple_link
 
         except jira.exceptions.JIRAError as e:
-            logger = logging.getLogger('jira_alert')
+            logger = logging.getLogger(__name__)
             logger.exception('')
 
             self.status = 'link_fail'

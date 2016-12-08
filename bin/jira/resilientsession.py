@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from requests import Session
-from requests.exceptions import ConnectionError
+import json
 import logging
 try:  # Python 2.7+
     from logging import NullHandler
@@ -11,16 +10,18 @@ except ImportError:
         def emit(self, record):
             pass
 import random
+from requests.exceptions import ConnectionError
+from requests import Session
 import time
-import json
-from .exceptions import JIRAError
+
+from jira.exceptions import JIRAError
 
 logging.getLogger('jira').addHandler(NullHandler())
 
 
 def raise_on_error(r, verb='???', **kwargs):
     request = kwargs.get('request', None)
-    headers = kwargs.get('headers', None)
+    # headers = kwargs.get('headers', None)
 
     if r is None:
         raise JIRAError(None, **kwargs)
@@ -65,9 +66,7 @@ def raise_on_error(r, verb='???', **kwargs):
 
 
 class ResilientSession(Session):
-
-    """
-    This class is supposed to retry requests that do return temporary errors.
+    """This class is supposed to retry requests that do return temporary errors.
 
     At this moment it supports: 502, 503, 504
     """
@@ -81,7 +80,7 @@ class ResilientSession(Session):
 
     def __recoverable(self, response, url, request, counter=1):
         msg = response
-        if type(response) == ConnectionError:
+        if isinstance(response, ConnectionError):
             logging.warning("Got ConnectionError [%s] errno:%s on %s %s\n%s\%s" % (
                 response, response.errno, request, url, vars(response), response.__dict__))
         if hasattr(response, 'status_code'):

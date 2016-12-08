@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-"""
-Starts an interactive JIRA session in an ipython terminal. Script arguments
-support changing the server and a persistent authentication over HTTP BASIC.
+"""Starts an interactive JIRA session in an ipython terminal.
+
+Script arguments support changing the server and a persistent authentication over HTTP BASIC.
 """
 
-import sys
 try:
     import configparser
-except:
+except ImportError:
     from six.moves import configparser
     from six.moves import input
 
@@ -16,14 +15,15 @@ from six.moves.urllib.parse import parse_qsl
 
 import argparse
 from getpass import getpass
-from sys import exit
+from jira import __version__
+from jira import JIRA
+from oauthlib.oauth1 import SIGNATURE_RSA
 import os
 import requests
-from oauthlib.oauth1 import SIGNATURE_RSA
 from requests_oauthlib import OAuth1
+from sys import exit
 
 import webbrowser
-from jira import JIRA, __version__
 
 CONFIG_PATH = os.path.join(
     os.path.expanduser('~'), '.jira-python', 'jirashell.ini')
@@ -85,8 +85,7 @@ def oauth_dance(server, consumer_key, key_cert_data, print_tokens=False, verify=
         'access_token': access['oauth_token'],
         'access_token_secret': access['oauth_token_secret'],
         'consumer_key': consumer_key,
-        'key_cert': key_cert_data,
-    }
+        'key_cert': key_cert_data}
 
 
 def process_config():
@@ -97,8 +96,8 @@ def process_config():
     try:
         parser.read(CONFIG_PATH)
     except configparser.ParsingError as err:
-        print("Couldn't read config file at path: {}".format(
-            CONFIG_PATH))
+        print("Couldn't read config file at path: {}\n{}".format(
+            CONFIG_PATH, err))
         raise
 
     if parser.has_section('options'):
@@ -204,16 +203,14 @@ def process_command_line():
             'oauth_dance': True,
             'consumer_key': args.consumer_key,
             'key_cert': key_cert_data,
-            'print_tokens': args.print_tokens,
-        }
+            'print_tokens': args.print_tokens}
     elif args.access_token and args.access_token_secret and args.consumer_key and args.key_cert:
         oauth = {
             'access_token': args.access_token,
             'oauth_dance': False,
             'access_token_secret': args.access_token_secret,
             'consumer_key': args.consumer_key,
-            'key_cert': key_cert_data,
-        }
+            'key_cert': key_cert_data}
 
     return options, basic_auth, oauth
 

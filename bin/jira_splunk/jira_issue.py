@@ -49,17 +49,17 @@ class Issue(object):
 
         self.status = 'new'
         # Splunk event data fields
-        self.search_name = payload['search_name']
+        self.search_name = payload.get('search_name', 'adhoc')
         self.search_string = ''
-        self.owner = payload['owner']
-        self.app = payload['app']
-        self.sid = payload['sid']
+        self.owner = payload.get('owner')
+        self.app = payload.get('app')
+        self.sid = payload.get('sid')
         self.job = None
-        self.results = None
+        self.results = payload.get('results', {}) # this is set by report commands
         self.results_unique = None
-        self.results_simple = payload['result']
-        self.results_file = payload['results_file']
-        self.results_link = payload['results_link']
+        self.results_simple = payload.get('result')
+        self.results_file = payload.get('results_file')
+        self.results_link = payload.get('results_link')
         self.trigger_time = ''
         self.trigger_time_rendered = ''
         self.expiration_time_rendered = ''
@@ -70,10 +70,10 @@ class Issue(object):
         self.result_count = 0
 
         # JIRA issue fields
-        self.project = self.jira_config.get('project_key','')
+        self.project = self.jira_config['project_key']
         self.key = None
         self.id = None
-        self.issuetype = self.jira_config.get('issue_type','')
+        self.issuetype = self.jira_config['issue_type']
         self.assignee = None
         self.reporter = None
         self.created = None
@@ -102,7 +102,7 @@ class Issue(object):
     def get_event_hash(self):
         '''Generate the event hash based on event data, less any datetime fields.'''
         search_name = self.search_name
-        results_data = self.results['results']
+        results_data = self.results.get('results', {})
         hashable_data = []
 
         if self.group_by_field in [None, '']:
@@ -160,7 +160,8 @@ class Issue(object):
 
             results_uri = '/servicesNS/nobody/%s/search/jobs/%s/results?output_mode=json' % (self.app, self.sid)
             serverResponse, serverContent = rest.simpleRequest(results_uri, sessionKey=self.session_key)
-            self.results = json.loads(serverContent)
+            if serverContent:
+                self.results = json.loads(serverContent)
 
         except Exception, e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -299,9 +300,15 @@ class Issue(object):
             self.keywords = self.get_keywords(self.job['content']['keywords'])
             self.event_count = self.job['content']['eventCount']
             self.result_count = self.job['content']['resultCount']
+
         if self.results:
-            self.fields = [field['name'] for field in self.results['fields']]
-            self.results_unique = self.get_unique_values()
+            try:
+                self.fields = [field['name'] for field in self.results['fields']]
+                self.results_unique = self.get_unique_values()
+            except Exception as e:
+                logger = logging.getLogger('jira_alert')
+                logger.error(str(e))
+                pass
 
         self.event_hash = self.get_event_hash()
         self.owner_rendered = render_user(self.owner)
@@ -334,7 +341,10 @@ class NewIssue(Issue):
         issue_fields = {}
         issue_fields['summary'] = self.render_summary()
         issue_fields['labels'] = self.labels
-        issue_fields['description'] = self.render_description()
+        try:
+          issue_fields['description'] = self.render_description()
+        except Exception as e:
+            issue_fields['description'] = "fish"
 
         issue_fields['issuetype'] = {'name': self.issuetype}
         issue_fields['project'] = {'key': self.project}
@@ -342,7 +352,7 @@ class NewIssue(Issue):
         try:
             # create issue using JIRA python SDK
             # new_issue = jconn.create_issue(fields=issue_fields)
-            # print >> sys.stderr, 'DEBUG issue_fields=%s' % issue_fields
+            print >> sys.stderr, 'DEBUG issue_fields=%s' % issue_fields
             new_issue = jconn.create_issue(fields=issue_fields)
 
             # add link to Splunk results

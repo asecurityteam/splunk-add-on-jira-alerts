@@ -1,5 +1,6 @@
 # contains common logic for our report commands
 
+from jira_helpers import get_jira_connection
 
 def fetch_jira(jira_name, session_key):
  
@@ -18,4 +19,6 @@ def fetch_jira(jira_name, session_key):
 
 
 def submit_issue(jira, issue):
-    pass
+    jconn = get_jira_connection(issue.jira_config)
+    result = issue.become_issue(jconn)
+    return (result, issue.status)

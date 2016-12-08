@@ -54,7 +54,7 @@ def json_to_jira(results):
     table = []
     table.append(header)
 
-    print >> sys.stderr, 'starting point results="%s"' % str(results)
+    #print >> sys.stderr, 'starting point results="%s"' % str(results)
 
     for row in results['results']:
         row_data = []

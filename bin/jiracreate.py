@@ -61,12 +61,18 @@ class JiraCreateCommand(ReportingCommand):
         payload['owner'] = self.get_owner()
         payload['sid'] = self.get_sid()
         payload['app'] = self.get_app()
+        payload['search_name'] = config.get('title', 'Splunk')
 
+        # we need to hack the results into this format
+        fields = []
         results = []
         for record in records:
-            results.append(record)
+            if not fields:
+                fields = [dict(name=n) for n in record.keys()]
+            results.append(dict(record.items()))
 
         payload['session_key'] = self.get_session_key()
+        payload['results'] = dict(results=results, fields=fields)
 
         new_issue = NewIssue(payload)
 

@@ -49,7 +49,7 @@ class Issue(object):
 
         self.status = 'new'
         # Splunk event data fields
-        self.search_name = payload.get('search_name', 'adhoc')
+        self.search_name = payload.get('search_name')
         self.search_string = ''
         self.owner = payload.get('owner')
         self.app = payload.get('app')
@@ -341,10 +341,7 @@ class NewIssue(Issue):
         issue_fields = {}
         issue_fields['summary'] = self.render_summary()
         issue_fields['labels'] = self.labels
-        try:
-          issue_fields['description'] = self.render_description()
-        except Exception as e:
-            issue_fields['description'] = "fish"
+        issue_fields['description'] = self.render_description()
 
         issue_fields['issuetype'] = {'name': self.issuetype}
         issue_fields['project'] = {'key': self.project}

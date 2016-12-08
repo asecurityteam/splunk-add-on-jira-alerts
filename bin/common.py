@@ -14,6 +14,7 @@ PARAMETERS = ['jira_url',
               'owner',
               'sid',
               'app',
+              'title',
               'attachment']
 
 
@@ -25,8 +26,10 @@ def build_jira_config(command, params):
             name = name[8:]
 
         if name in PARAMETERS:
-            attribute_values = getattr(command, name, None)
-            config[name] = attribute_values or value
+            attribute_value = getattr(command, name, None)
+            value = attribute_value or value
+            if value is not None:
+                config[name] = value
     return config
 
 

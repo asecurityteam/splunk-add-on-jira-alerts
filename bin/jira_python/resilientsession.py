@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import json
+from requests import Session
+from requests.exceptions import ConnectionError
 import logging
 try:  # Python 2.7+
     from logging import NullHandler
@@ -10,11 +11,9 @@ except ImportError:
         def emit(self, record):
             pass
 import random
-from requests.exceptions import ConnectionError
-from requests import Session
 import time
-
-from jira.exceptions import JIRAError
+import json
+from .exceptions import JIRAError
 
 logging.getLogger('jira').addHandler(NullHandler())
 
@@ -66,7 +65,9 @@ def raise_on_error(r, verb='???', **kwargs):
 
 
 class ResilientSession(Session):
-    """This class is supposed to retry requests that do return temporary errors.
+
+    """
+    This class is supposed to retry requests that do return temporary errors.
 
     At this moment it supports: 502, 503, 504
     """

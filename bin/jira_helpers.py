@@ -12,7 +12,7 @@ import socket
 
 # if not APP_LIB_DIR in sys.path:
 #     sys.path.append(APP_LIB_DIR)
-import jira
+import jira_python
 
 def splunkd_auth_header(session_key):
     return {'Authorization': 'Splunk ' + session_key}

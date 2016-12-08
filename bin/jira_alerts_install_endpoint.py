@@ -8,18 +8,18 @@ from jira_helpers import *
 
 PASSWORD_PLACEHOLDER = '*******'
 DEFAULT_SETTINGS = { 'index': '_internal',
-                     'project_key': '',
+                     'project_key': 'WTF',
                      'issue_type': '',
-                     'summary': '$name$',
-                     'description': '< to do >',
+                     'summary': '${name}$',
+                     'description': 'file:///default/default_rich.tmpl',
                      'priority': 'Medium',
-                     'labels': 'splunk',
+                     'labels': 'splunk_for_jira, alert',
                      'attachment': False,
                      'assignee': 'Unassigned',
-                     'grouping': 'None',
-                     'group_by': 'None',
+                     'grouping': 'fields',
+                     'group_by': 'host',
                      'link': 'None',
-                     'comment': '< to do >' }
+                     'comment': 'file:///default/default_rich.tmpl',
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):
     def __init__(self, *args):
@@ -37,7 +37,7 @@ class JiraAlertsInstallHandler(admin.MConfigHandler):
         item['jira_password'] = PASSWORD_PLACEHOLDER
         for k, v in DEFAULT_SETTINGS.items():
             item['default_' + k] = jira_settings.get(k, v)
-        item['import'] = '0'
+        item['import'] = '1'
 
     def handleEdit(self, confInfo):
         if self.callerArgs.id == 'jira':

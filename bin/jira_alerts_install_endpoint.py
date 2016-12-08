@@ -10,7 +10,7 @@ PASSWORD_PLACEHOLDER = '*******'
 DEFAULT_SETTINGS = { 'index': '_internal',
                      'project_key': 'WTF',
                      'issue_type': '',
-                     'summary': '${name}$',
+                     'summary': '${search_name}$',
                      'description': 'file:///default/default_rich.tmpl',
                      'priority': 'Medium',
                      'labels': 'splunk_for_jira, alert',

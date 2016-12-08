@@ -1,6 +1,9 @@
 []
 access = read : [ * ], write : [ admin ]
 
+[commands]
+export = system
+
 [alert_actions/jira]
 export = system
 

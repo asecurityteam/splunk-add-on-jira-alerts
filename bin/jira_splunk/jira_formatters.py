@@ -30,7 +30,7 @@ def render_user(user):
     if user in ['admin','nobody']:
         user_rendered = user
     else:
-        user_rendered = '[~' + user + ']'
+        user_rendered = '[~' + str(user) + ']'
     return user_rendered
 
 def json_to_csv(results):
@@ -54,7 +54,7 @@ def json_to_jira(results):
     table = []
     table.append(header)
 
-    print >> sys.stderr, 'starting point results="%s"' % str(results)
+    #print >> sys.stderr, 'starting point results="%s"' % str(results)
 
     for row in results['results']:
         row_data = []

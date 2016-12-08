@@ -3,31 +3,30 @@ import sys
 import json
 import requests
 import time
-from jira_helpers import get_jira_settings, get_jira_connection
-# from jira_formatters import get_description, get_comment
+from jira_splunk import *
 import logging, logging.handlers
-import jira_issue
 
 SPLUNK_HOME = os.environ.get('SPLUNK_HOME')
-BASE_LOG_PATH = os.path.join(SPLUNK_HOME, 'var', 'log', 'splunk')
-# BASE_APP_DIR = os.path.join(SPLUNK_HOME, 'etc', 'apps', 'atlassian-add-on-jira')
-# APP_LIB_DIR = os.path.join(BASE_APP_DIR, 'bin', 'lib')
-# if not APP_LIB_DIR in sys.path:
-#     sys.path.append(APP_LIB_DIR)
+
+# set logging:
+logging.root
+logging.root.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(levelname)s %(message)s')
+handler = logging.StreamHandler(stream=sys.stderr)
+handler.setFormatter(formatter)
+logging.root.addHandler(handler)
 
 # creates outbound message from alert payload contents
 # and attempts to send to the specified endpoint
 def process_alert(payload):
-    logger = logging.getLogger(__name__)
-    logger.setLevel(level=logging.DEBUG)
 
-    # logger.debug("Original JSON payload received from sendmodalert, payload=%s" % str(payload))
+    # logging.debug("Original JSON payload received from sendmodalert, payload=%s" % str(payload))
 
     # get the config for handling the triggered alert
     jira_config = get_jira_settings(payload['server_uri'], payload['session_key'])
 
     # WARNING - this will dump your plaintext password to Splunk's _internal index
-    # logger.debug("JIRA config initialised jira_config=%s" % str(jira_config))
+    # logging.debug("JIRA config initialised jira_config=%s" % str(jira_config))
 
     # get alert object from results
     new_event = jira_issue.NewIssue(payload)
@@ -36,10 +35,10 @@ def process_alert(payload):
     jconn = get_jira_connection(jira_config)
 
     if new_event:
-        logger.info('Built new JIRA Issue object from Splunk alert, search_name="%s" sid="%s"' % (new_event.search_name, new_event.sid))
-        # logger.debug("New JIRA-ready event for REST API, new_event=%s" % new_event.__dict__)
+        logging.info('Built new JIRA Issue object from Splunk alert, search_name="%s" sid="%s"' % (new_event.search_name, new_event.sid))
+        # logging.debug("New JIRA-ready event for REST API, new_event=%s" % new_event.__dict__)
     else:
-        logger.warn("Unable to create JIRA Issue object from Splunk alert")
+        logging.warn("Unable to create JIRA Issue object from Splunk alert")
 
     if new_event.ancestor:
         # new_issue.update_issue(jconn)
@@ -55,16 +54,14 @@ def process_alert(payload):
             attached_results = new_event.attach_results(jconn)
 
         if new_issue:
-            logger.info('action=%s sid="%s" id="%s" key="%s" summary="%s" issuetype="%s" event_hash="%s" message="%s"' % ('create', new_event.sid, new_issue.id, new_issue.key, new_issue.fields.summary, new_issue.fields.issuetype, new_event.event_hash, 'Created new JIRA issue successfully'))
+            logging.info('action=%s sid="%s" id="%s" key="%s" summary="%s" issuetype="%s" event_hash="%s" message="%s"' % ('create', new_event.sid, new_issue.id, new_issue.key, new_issue.fields.summary, new_issue.fields.issuetype, new_event.event_hash, 'Created new JIRA issue successfully'))
         else:
-            logger.debug('Failed to create new JIRA issue, exiting. search_name="%s" sid="%s"' % (new_event.search_name, new_event.sid))
+            logging.debug('Failed to create new JIRA issue, exiting. search_name="%s" sid="%s"' % (new_event.search_name, new_event.sid))
             sys.exit(2)
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) > 1 and sys.argv[1] == "--execute":
-        logger = logging.getLogger()
         try:
             # retrieving message payload from splunk
             raw_payload = sys.stdin.read()
@@ -72,9 +69,9 @@ if __name__ == "__main__":
             # pull out the payload
             process_alert(payload)
         except Exception, e:
-            logger.exception('')
+            logging.exception('')
             # print >> sys.stderr, 'error="%s" message="%s"' % (str(e), 'Unable to fully process alert, exiting')
             sys.exit(3)
     else:
-        print >> sys.stderr, "Unsupported execution mode, expected --execute flag"
+        logging.error('Unsupported execution mode, expected --execute flag')
         sys.exit(1)

@@ -19,7 +19,7 @@ DEFAULT_SETTINGS = { 'index': '_internal',
                      'grouping': 'fields',
                      'group_by': 'host',
                      'link': 'None',
-                     'comment': 'file:///default/default_rich.tmpl',
+                     'comment': 'file:///default/default_rich.tmpl'
 }
 
 class JiraAlertsInstallHandler(admin.MConfigHandler):
@@ -38,7 +38,7 @@ class JiraAlertsInstallHandler(admin.MConfigHandler):
         item['jira_password'] = PASSWORD_PLACEHOLDER
         for k, v in DEFAULT_SETTINGS.items():
             item['default_' + k] = jira_settings.get(k, v)
-        item['import'] = '1'
+        item['import'] = '0'
 
     def handleEdit(self, confInfo):
         if self.callerArgs.id == 'jira':

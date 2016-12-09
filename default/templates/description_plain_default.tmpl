@@ -1,0 +1,12 @@
+h3. ${search_name}$
+Event Data ASCII
+{noformat}{% for row in results_jira %}${row}${% endfor %}{noformat}
+
+Event Details
+{color:#707070}
+~*Triggered*: {{${trigger_time_rendered}$}} | *Expires*: {{${expiration_time_rendered}$}} | *\# Results*: {{${result_count}$}} | *\# Events*: {{${event_count}$}} | *Results Link*: {{_[Results|${results_link}$]_}}~
+~*Hash*: {{${event_hash}$}} | *Unique Values*: {{${results_unique}$}}~
+{color}
+Search Query
+{color:#707070}~*App Name*: {{${app}$}} | *Owner*: ${owner_rendered}$~{color}
+{noformat}${search_string}${noformat}

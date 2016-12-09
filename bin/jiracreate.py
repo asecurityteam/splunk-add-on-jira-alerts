@@ -6,7 +6,9 @@ from splunklib.searchcommands import \
     dispatch, ReportingCommand, Configuration, Option, validators
 
 from common import fetch_jira, submit_issue
-from jira_issue import NewIssue
+from jira_splunk.jira_issue import NewIssue
+
+from jira_splunk.results import SearchCommandResults, SplunkSearch
 
 import logging
 logger = logging.getLogger('JiraCreateCommand')
@@ -56,25 +58,16 @@ class JiraCreateCommand(ReportingCommand):
             yield dict(Exception=str(e))
             return
 
-        payload = {}
-        payload['configuration'] = config
-        payload['owner'] = self.get_owner()
-        payload['sid'] = self.get_sid()
-        payload['app'] = self.get_app()
-        payload['search_name'] = config.get('title', 'Splunk')
+        splunk_search = SplunkSearch(self.get_app(),
+                                     self.get_sid(),
+                                     self.get_session_key(),
+                                     owner=self.get_owner(),
+                                     search_name=config.get('title', 'Splunk'),
+                                     search_string=" ".join(self.fieldnames))
 
-        # we need to hack the results into this format
-        fields = []
-        results = []
-        for record in records:
-            if not fields:
-                fields = [dict(name=n) for n in record.keys()]
-            results.append(dict(record.items()))
+        results = SearchCommandResults(splunk_search, records)
+        new_issue = NewIssue(config, results)
 
-        payload['session_key'] = self.get_session_key()
-        payload['results'] = dict(results=results, fields=fields)
-
-        new_issue = NewIssue(payload)
 
         if self.send:
             ticket, status = submit_issue(new_issue)

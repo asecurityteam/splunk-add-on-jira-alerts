@@ -49,10 +49,10 @@ from .resources import Resource, Issue, Comment, Project, Attachment, Component,
     CustomFieldOption, RemoteLink
 # GreenHopper specific resources
 from .resources import GreenHopperResource, Board, Sprint
-from .resilientsession import ResilientSession, raise_on_error
+from resilientsession import ResilientSession, raise_on_error
 from . import __version__
-from .utils import threaded_requests, json_loads, CaseInsensitiveDict
-from .exceptions import JIRAError
+from utils import threaded_requests, json_loads, CaseInsensitiveDict
+from exceptions import JIRAError
 from pkg_resources import parse_version
 
 try:

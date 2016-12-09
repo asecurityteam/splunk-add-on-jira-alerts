@@ -1,6 +1,6 @@
 # contains common logic for our report commands
 
-from jira_helpers import get_jira_connection
+from jira_splunk.jira_helpers import get_jira_connection
 
 PARAMETERS = ['jira_url',
               'jira_username',
@@ -48,7 +48,6 @@ def fetch_jira(command, session_key):
     if not jira_params:
         raise RuntimeError("Failed to find jira instance in our list")
     return build_jira_config(command, jira_params)
-
 
 
 def submit_issue(issue):

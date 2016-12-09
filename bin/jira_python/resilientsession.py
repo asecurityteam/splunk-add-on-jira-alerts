@@ -13,7 +13,7 @@ except ImportError:
 import random
 import time
 import json
-from .exceptions import JIRAError
+from exceptions import JIRAError
 
 logging.getLogger('jira').addHandler(NullHandler())
 

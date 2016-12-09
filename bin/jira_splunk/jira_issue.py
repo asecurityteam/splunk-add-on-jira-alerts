@@ -1,22 +1,16 @@
-import os
 import sys
-import time
-from dateutil.parser import parse
+#from dateutil.parser import parse
 import datetime
-import requests
 import socket
 import json
 import splunk.rest as rest
-import splunk.input as input
-import re
-import hashlib
 import logging
-import jira
+import jira_python as jira
 import jinja2
 from jira_formatters import *
 
 # {% if results['host'] != None %}: ${results['host']}${% endif %}
-DEFAULT_SUMMARY = '''${search_name}$'''
+DEFAULT_SUMMARY = '''Summary: ${search_name}$'''
 
 
 # h6. Event Data JIRA
@@ -41,33 +35,16 @@ Search Query
 {color:#707070}~*App Name*: {{${app}$}} | *Owner*: ${owner_rendered}$~{color}
 {noformat}${search_string}${noformat}'''
 
-class Issue(object):
 
-    def __init__(self, payload):
-        self.jira_config = payload['configuration']
-        self.index = self.jira_config.get('index','_internal')
+class Issue(object):
+    def __init__(self, configuration, results_handler):
+        self.jira_config = configuration
+        self.index = self.jira_config.get('index', '_internal')
 
         self.status = 'new'
-        # Splunk event data fields
-        self.search_name = payload.get('search_name')
-        self.search_string = ''
-        self.owner = payload.get('owner')
-        self.app = payload.get('app')
-        self.sid = payload.get('sid')
-        self.job = None
-        self.results = payload.get('results', {}) # this is set by report commands
-        self.results_unique = None
-        self.results_simple = payload.get('result')
-        self.results_file = payload.get('results_file')
-        self.results_link = payload.get('results_link')
-        self.trigger_time = ''
-        self.trigger_time_rendered = ''
-        self.expiration_time_rendered = ''
-        self.ttl = ''
-        self.keywords = {}
-        self.fields = []
-        self.event_count = 0
-        self.result_count = 0
+
+        # Splunk results. contains the search details that generated the output.
+        self.results = results_handler
 
         # JIRA issue fields
         self.project = self.jira_config['project_key']
@@ -79,7 +56,7 @@ class Issue(object):
         self.created = None
         self.updated = None
         self.resolution = None
-        self.labels = self.jira_config.get('labels','').split(',')
+        self.labels = self.jira_config.get('labels', '').split(',')
         self.priority = None # not yet used
         self.summary = self.jira_config.get('summary', DEFAULT_SUMMARY)
         self.description = self.jira_config.get('description', DEFAULT_DESCRIPTION)
@@ -89,112 +66,24 @@ class Issue(object):
         self.hostname = socket.gethostname()  # should eventually update this to use server.conf or even inputs.conf
         self.event_hash = None
         self.ancestor = None
-        self.group_by_field = self.jira_config.get('group_by','')
+        self.group_by_field = self.jira_config.get('group_by', '')
         self.update_count = 0
-        self.session_key = payload['session_key']
         self.context = {}
 
         self.process_results()
 
+    # these properties are needed to make the template rendering work.
+    @property
+    def search_name(self):
+        return self.results.search.search_name
+
+    @property
+    def search_string(self):
+        return self.results.search.search_string
+
     def get_ancestor():
         pass
 
-    def get_event_hash(self):
-        '''Generate the event hash based on event data, less any datetime fields.'''
-        search_name = self.search_name
-        results_data = self.results.get('results', {})
-        hashable_data = []
-
-        if self.group_by_field in [None, '']:
-            hash_fields = self.fields
-        else:
-            hash_fields = self.group_by_field
-
-        for result in results_data:
-            # reduce data set to hash_fields
-            hashable_data.append( {k:v for (k,v) in result.iteritems() if k in hash_fields} )
-
-        hash_vals = []
-        # create unique set of values
-        for hash_val in [v for entry in hashable_data for v in entry.values()]:
-            if isinstance(hash_val, list):
-                hash_vals.append('_'.join([h for h in hash_val]))
-            else:
-                hash_vals.append(hash_val)
-
-        hash_set = set( sorted(hash_vals) )
-
-        # convert to a single hashable string
-        hash_data =  search_name + '_' + str( '_'.join([item for item in hash_set]) )
-        hash_data = hash_data.lower()
-
-
-        # generate the hash based on the final hash of data, including any unique values in the list of hash_fields.  should end up like:
-        # 'Search Name_val1_val2'...
-        event_hash = hashlib.md5(hash_data).hexdigest()
-
-        # logr.debug('action=%s search_name=%s hash_fields=%s hash_data=%s event_hash=%s message="%s"' % ('event_hash', search_name, hash_fields, hash_data, event_hash, 'generated event hash for search results'))
-
-        if event_hash:
-            return event_hash
-        else:
-            return False
-
-    def get_keywords(self, keywords):
-        kv_matches = {}
-        kv_matches_quoted = dict(re.findall(r'\"(.+)::(.+)\"', keywords))
-        kv_matches_norm = dict(re.findall(r'(\S+)::(\S+)', keywords))
-
-        if kv_matches_quoted:
-            kv_matches.update(kv_matches_quoted)
-        if kv_matches_norm:
-            kv_matches.update(kv_matches_norm)
-
-        return kv_matches
-
-    def get_results(self):
-        try:
-            job_uri = '/servicesNS/nobody/%s/search/jobs/%s?output_mode=json' % (self.app, self.sid)
-            serverResponse, serverContent = rest.simpleRequest(job_uri, sessionKey=self.session_key)
-            self.job = json.loads(serverContent)['entry'][0]
-
-            results_uri = '/servicesNS/nobody/%s/search/jobs/%s/results?output_mode=json' % (self.app, self.sid)
-            serverResponse, serverContent = rest.simpleRequest(results_uri, sessionKey=self.session_key)
-            if serverContent:
-                self.results = json.loads(serverContent)
-
-        except Exception, e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print >> sys.stderr, 'error="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'WARN: Unexpected exception seen getting search result data from REST API')
-
-    def get_unique_values(self):
-        '''Get the unique values for any number of fields.'''
-
-        blacklisted_fields = ['count','_time',]
-
-        filtered_data = []
-        for result in self.results['results']:
-            # reduce data set to hash_fields
-            filtered_data.append( {k:v for (k,v) in result.iteritems() if k not in blacklisted_fields} )
-
-        unique_values = {}
-        val_set = set()
-        keys = set([y for x in filtered_data for y in x.keys()])
-        for key in keys:
-            values = [v for e in filtered_data for k,v in e.items() if k == key]
-            for item in values:
-                try:
-                    val_set.update( [item] )
-                except TypeError, e:
-                    val_set.update( [ piece for piece in item] )
-                finally:
-                    unique_values[key] = "/".join(v for v in val_set)
-                    val_set.clear()
-
-        if unique_values:
-            return unique_values
-        else:
-            return False
 
     def attach_results(self, jconn):
         '''Attach the results.csv.gz file from dispatch as a JIRA attachment.  Append a chunk of the Splunk SID for readability'''
@@ -222,18 +111,19 @@ class Issue(object):
             blacklist_fields = []
             # cap output at 50 rows for now
             output_max_rows = 50
-            trimmed_results = self.results.copy()
+
             tmp_results = []
-            allowed_fields = [ key['name'] for key in self.results['fields'] if key['name'] not in blacklist_fields ]
-            for row in trimmed_results['results']:
+            allowed_fields = [key['name'] for key in self.results.fields if key['name'] not in blacklist_fields]
+            for row in self.results.results:
                 # print >> sys.stderr, 'printing row="%s"' % row
                 tmp_results.append({key: row[key] for key in row if key in allowed_fields})
+            trimmed_results = {}
             trimmed_results['results'] = tmp_results
             trimmed_results['fields'] = allowed_fields
 
             self.results_jira = json_to_jira(trimmed_results)[0:output_max_rows]
             self.results_ascii = json_to_tabulate(trimmed_results)[0:output_max_rows]
-        except Exception, e:
+        except Exception:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print >> sys.stderr, 'exception="%s" object="%s" line=%s message="%s"' % (exc_type, exc_obj, exc_tb.tb_lineno, 'Unexpected exception seen formatting results')
 
@@ -256,18 +146,18 @@ class Issue(object):
             event_vars = {
                 'time': now.strftime("%Y-%m-%d %H:%M:%S %Z"),
                 'action': 'create',
-                'search_name': self.search_name,
+                'search_name': self.results.search.search_name,
                 'project': self.project,
                 'key': self.key,
                 'issuetype': self.issuetype,
                 'labels': ' '.join(self.labels),
                 'summary': self.summary,
-                'search_id': self.sid,
+                'search_id': self.results.search.sid,
                 'event_hash': self.event_hash,
                 'keywords': str(self.keywords),
                 'group_by_field': self.group_by_field,
-                'result_count': self.result_count,
-                'event_count': self.event_count,
+                'result_count': self.results.result_count,
+                'event_count': self.results.event_count,
                 'update_count': self.update_count,
                 'ttl': self.ttl
                 }
@@ -276,51 +166,28 @@ class Issue(object):
 
             # first add alerts to collections ...
             event_submit_uri = '/services/receivers/simple?output_mode=json&host=%s&source=%s&sourcetype=%s&index=%s' % (self.hostname, 'jira_issue.py', 'jira_issue', self.index)
-            serverResponse, serverContent = rest.simpleRequest(event_submit_uri, sessionKey=self.session_key, jsonargs=json.dumps(event))
+            serverResponse, serverContent = rest.simpleRequest(event_submit_uri, sessionKey=self.results.search.session_key, jsonargs=json.dumps(event))
             # print >> sys.stderr, 'DUMP serverContent=%s serverResponse="%s"' % (json.loads(serverContent), json.loads(serverResponse))
 
             return event
 
-        except Exception, e:
+        except Exception:
             logging.exception('')
 
     def process_results(self):
         ''' Crunch some of the results figures for grouping and formatting inside JIRA '''
-        self.get_results()
+        self.event_hash = self.results.get_event_hash(self.group_by_field)
+        self.owner_rendered = render_user(self.results.search.owner)
 
-        if self.job:
-            self.search_string = self.job['content']['eventSearch']
-            self.ttl = self.job['content']['ttl']
-            # manipulate time string using dateutil
-            # self.job['updated'] = 2016-03-01T21:03:03.000+11:00
-            updated = parse(self.job['updated'])
-            self.trigger_time = int(time.mktime(updated.timetuple())) # unix time: 1456830183
-            self.trigger_time_rendered = str(updated)
-            self.expiration_time_rendered = str(updated + datetime.timedelta(seconds=self.ttl))
-            self.keywords = self.get_keywords(self.job['content']['keywords'])
-            self.event_count = self.job['content']['eventCount']
-            self.result_count = self.job['content']['resultCount']
-
-        if self.results:
-            try:
-                self.fields = [field['name'] for field in self.results['fields']]
-                self.results_unique = self.get_unique_values()
-            except Exception as e:
-                logger = logging.getLogger('jira_alert')
-                logger.error(str(e))
-                pass
-
-        self.event_hash = self.get_event_hash()
-        self.owner_rendered = render_user(self.owner)
 
 class NewIssue(Issue):
-    def __init__(self, payload):
-        Issue.__init__(self, payload)
+    def __init__(self, configuration, results):
+        Issue.__init__(self, configuration, results)
 
     def render_summary(self):
         print >> sys.stderr, 'DEBUG summary=%s' % self.summary
-        summary_env = jinja2.Environment(variable_start_string = '${',variable_end_string = '}$')
-        # rendered_summary = summary_env.from_string(raw_summary).render(self.__dict__)
+        summary_env = jinja2.Environment(variable_start_string='${', 
+                                         variable_end_string='}$')
         rendered_summary = summary_env.from_string(self.summary).render(self.__dict__)
 
         return rendered_summary
@@ -331,7 +198,13 @@ class NewIssue(Issue):
         self.format_results()
         description_env = jinja2.Environment(variable_start_string = '${',variable_end_string = '}$')
         # rendered_description = description_env.from_string(raw_description).render(self.__dict__)
-        rendered_description = description_env.from_string(self.description).render(self.__dict__)
+
+        parameters = {
+            'search_name': self.results.search.search_name
+        }
+        assert self.results.search.search_name
+
+        rendered_description = description_env.from_string(self.description).render(parameters)
 
         return rendered_description
 
@@ -340,11 +213,14 @@ class NewIssue(Issue):
 
         issue_fields = {}
         issue_fields['summary'] = self.render_summary()
+        assert self.summary, "no summary"
+        assert issue_fields['summary'], "no rendered summary"
         issue_fields['labels'] = self.labels
         issue_fields['description'] = self.render_description()
 
         issue_fields['issuetype'] = {'name': self.issuetype}
         issue_fields['project'] = {'key': self.project}
+
 
         try:
             # create issue using JIRA python SDK
